@@ -1,33 +1,27 @@
-# 소개
+# 요구사항
 
-와탭랩스는 클라우드 모니터링 플랫폼 서비스를 제공합니다. 프론트엔드 개발자는 모니터링 데이터를 시각화하여 위험 감지와 장애 분석을 돕는 화면을 만드는 일을 담당합니다. 
+Open API를 활용하여 애플리케이션 모니터링을 위한 대시보드 화면을 제작합니다.
 
-이 중 실시간 대시보드는 위험 감지를 위한 가장 기본적인 서비스로, 프론트엔드 개발자의 주 작업 대상입니다. 
+## DATA
 
-# 프로젝트
+- [] Endpoint를 기준으로 10개 이상의 Open API를 사용하여 대시보드를 구성
+- [] 실시간 : 5초 주기로 데이터를 갱신
+- [] Open API를 선택하고 위젯을 선택하여 대시보드를 구성하는 것은 사용자의 분석 관점으로 반영
+- [] 데이터 요청 수가 많은 경우에 화면 처리를 효과적으로 처리
+- [] 라인 차트로 표시하는 시계열 데이터의 경우, 네트워크 요청 부하와 데이터
+  상태 관리 측면에서 성능 최적화를 위한 방법을 고민
 
-## Open API를 활용한 대시보드 구현
+## COMPONENTS
 
-와탭 Open API를 활용하여 애플리케이션 모니터링을 위한 대시보드 화면을 제작합니다.
+- [] 1개 이상의 인포매틱스 위젯
+- [] 1개 이상의 막대 차트 위젯
+- [] 1개 이상의 라인 차트 위젯
+- [] 화면 크기에 대한 반응형 레이아웃 스타일을 적용.
+- [] (옵션) 차트 종류 변경, 차트 확대, 도움말 표시, 임계선 표시 등의 사용자 편의 기능은 자유
+  롭게 추가.
 
-- **세부적인 과제 내용은 별도 제공합니다.*
+## 제약 조건
 
-- Open API에 대한 자세한 설명은 [Open API GUIDE](https://docs.whatap.io/kr/appendix/open_api_application.html#empty)를 참고하세요. 
-
-- 실제 서비스 화면을 둘러보고 싶으시다면, [와탭 홈페이지](https://www.whatap.io/ko/)에서 이메일 입력 후 데모를 시작할 수 있습니다. 
-
-![application_monitoring](./public/application_dashboard.png)
-
-![server_monitoring](./public/server_dashboard.png)
-
-![container_monitoring](./public/container_dashboard.png)
-
-
-
-## 이슈 사항
-
-- 브라우져 CORS 정책에 따라 WhaTap Open API 사용이 제한될 경우 [Run Chrome browser without CORS](https://alfilatov.com/posts/run-chrome-without-cors/)에서 문제를 해결할 수 있습니다.
-
----
-
-이 프로젝트는 [Create React App](https://github.com/facebook/create-react-app)을 사용하여 만들었습니다. 
+- [] 부분 컴포넌트는 antd와 같은 외부 라이브러리를 사용 가능
+- [] 차트의 경우 d3나 chartjs, antd-chart 사용을 추천
+- [] 타입스크립트를 사용
