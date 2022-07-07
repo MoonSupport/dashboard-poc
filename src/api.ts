@@ -1,12 +1,19 @@
-// @ts-nocheck
 const DEMO_PROJECT_API_TOCKEN = "XGJHUSQZTI2AVIENWA27HI5V";
-const DEMO_PROJECT_CODE = 5490;
-const OPEN_API_HEADERS = {
+const DEMO_PROJECT_CODE = "5490";
+const OPEN_API_HEADERS = Object.freeze({
   "x-whatap-pcode": DEMO_PROJECT_CODE,
   "x-whatap-token": DEMO_PROJECT_API_TOCKEN,
-};
+});
 
 const OPEN_API_ROOT = "https://service.whatap.io/open/api";
+
+type OPEN_API_TYPE = keyof typeof OPEN_API;
+type OPEN_API_KEY<T extends OPEN_API_TYPE> = keyof typeof OPEN_API[T];
+
+interface Param {
+  stime?: number;
+  etime?: number;
+}
 
 const OPEN_API = {
   "": {
@@ -36,38 +43,53 @@ const OPEN_API = {
   },
 };
 
-const getPath = (url, param = {}) => {
+const getPath = (url: string, param: Param = {}) => {
   let path = url;
   for (const key in param) {
+    // https://github.com/microsoft/TypeScript/issues/13046
+    // @ts-ignore
     path = path.replace(new RegExp("\\{" + key + "\\}", "g"), param[key]);
   }
 
   return path;
 };
 
-const getOpenApi = (type) => (key, param) =>
-  new Promise((resolve, reject) => {
-    if (key in OPEN_API[type]) {
-      return resolve({
-        url: [OPEN_API_ROOT, type, key].join("/"),
-        name: OPEN_API[type][key],
-      });
-    } else {
-      reject("잘못된 API 정보");
-    }
-  }).then(({ url, name }) =>
-    fetch(getPath(url, param), {
-      headers: OPEN_API_HEADERS,
-    })
-      .then((response) => response.json())
-      .then((data) => ({
-        key,
-        name,
-        data,
-      }))
-  );
+export interface SERIALIZED_OPEN_API<T extends OPEN_API_TYPE> {
+  url: string;
+  name: typeof OPEN_API[T][OPEN_API_KEY<T>];
+}
 
-const spot = getOpenApi("");
-const series = getOpenApi("json");
+export interface OPEN_API_RESULT<T extends OPEN_API_TYPE> {
+  key: OPEN_API_KEY<T>;
+  name: typeof OPEN_API[T][OPEN_API_KEY<T>];
+  data: any;
+}
+
+const getOpenApi =
+  <T extends OPEN_API_TYPE>(type: T) =>
+  (key: OPEN_API_KEY<T>, param?: Param) =>
+    new Promise<SERIALIZED_OPEN_API<T>>((resolve, reject) => {
+      if (key in OPEN_API[type]) {
+        return resolve({
+          url: [OPEN_API_ROOT, type, key].join("/"),
+          name: OPEN_API[type][key],
+        });
+      } else {
+        reject("잘못된 API 정보");
+      }
+    }).then(({ url, name }) =>
+      fetch(getPath(url, param), {
+        headers: OPEN_API_HEADERS,
+      })
+        .then((response) => response.json())
+        .then((data) => ({
+          key,
+          name,
+          data,
+        }))
+    );
+
+const spot = getOpenApi<"">("");
+const series = getOpenApi<"json">("json");
 
 export default { spot, series };

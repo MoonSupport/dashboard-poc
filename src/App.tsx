@@ -1,13 +1,17 @@
-// @ts-nocheck
 import { useEffect, useState } from "react";
-import api from "./api";
+import api, { OPEN_API_RESULT } from "./api";
 const HOUR = 1000 * 60 * 60;
 function App() {
-  const [actAgent, setActAgent] = useState();
-  const [httpcSeries, setHttpcSeries] = useState();
+  const [actAgent, setActAgent] = useState<undefined | OPEN_API_RESULT<"">>();
+  const [httpcSeries, setHttpcSeries] = useState<
+    undefined | OPEN_API_RESULT<"json">
+  >();
 
   useEffect(() => {
-    api.spot("act_agent").then((result) => setActAgent(result));
+    api.spot("act_agent").then((result) => {
+      console.log("result", result);
+      setActAgent(result);
+    });
     api
       .series("exception/{stime}/{etime}", {
         stime: Date.now() - HOUR,
