@@ -16,7 +16,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "prepare": "husky install",
+    "eslint": "eslint --fix",
+    "check-types": "tsc --noemit",
+    "tslint": "yarn eslint && yarn check-types"
   },
   "eslintConfig": {
     "extends": [
@@ -39,6 +43,30 @@
   "devDependencies": {
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
-    "cross-env": "^7.0.3"
+    "@typescript-eslint/eslint-plugin": "^5.30.5",
+    "@typescript-eslint/parser": "^5.30.5",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.19.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.30.1",
+    "husky": "^8.0.1",
+    "lint-staged": "^11.1.4",
+    "prettier": "2.7.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm test"
+    }
+  },
+  "lint-staged": {
+    "*.{ts, tsx}": [
+      "yarn tslint",
+      "prettier --write"
+    ],
+    "*.{js,  jsx}": [
+      "yarn eslint --fix"
+    ]
   }
 }
