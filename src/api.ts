@@ -59,10 +59,34 @@ export interface SERIALIZED_OPEN_API<T extends OPEN_API_TYPE> {
   name: typeof OPEN_API[T][OPEN_API_KEY<T>];
 }
 
+type SPOT_DATA = number;
+
+interface ExceptionRecord {
+  class: string;
+  classHash: number;
+  count: number;
+  msg: string;
+  oids: number[];
+  okindNames: string[];
+  onames: string[];
+  onodeNames: unknown[];
+  onodes: unknown[];
+  service: string;
+  serviceHash: number;
+  snapSeq: string;
+  time: number;
+}
+
+type SERIES_DATA = {
+  records: ExceptionRecord[];
+  retrievedTotal: number;
+  total: number;
+};
+
 export interface OPEN_API_RESULT<T extends OPEN_API_TYPE> {
   key: OPEN_API_KEY<T>;
   name: typeof OPEN_API[T][OPEN_API_KEY<T>];
-  data: any;
+  data: T extends "" ? SPOT_DATA : SERIES_DATA;
 }
 
 const getOpenApi =
@@ -70,8 +94,10 @@ const getOpenApi =
   (key: OPEN_API_KEY<T>, param?: Param) =>
     new Promise<SERIALIZED_OPEN_API<T>>((resolve, reject) => {
       if (key in OPEN_API[type]) {
+        const subPath = type === "" ? [key] : [type, key];
+
         return resolve({
-          url: [OPEN_API_ROOT, type, key].join("/"),
+          url: [OPEN_API_ROOT, ...subPath].join("/"),
           name: OPEN_API[type][key],
         });
       } else {
@@ -82,7 +108,7 @@ const getOpenApi =
         headers: OPEN_API_HEADERS,
       })
         .then((response) => response.json())
-        .then((data) => ({
+        .then<OPEN_API_RESULT<T>>((data) => ({
           key,
           name,
           data,

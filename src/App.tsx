@@ -9,7 +9,6 @@ function App() {
 
   useEffect(() => {
     api.spot("act_agent").then((result) => {
-      console.log("result", result);
       setActAgent(result);
     });
     api
@@ -17,7 +16,9 @@ function App() {
         stime: Date.now() - HOUR,
         etime: Date.now(),
       })
-      .then((result) => setHttpcSeries(result));
+      .then((result) => {
+        setHttpcSeries(result);
+      });
   }, []);
 
   return (
