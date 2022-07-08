@@ -1,22 +1,17 @@
+import { Typography } from "antd";
 import { FunctionComponent } from "react";
-import { ChartType } from "./Chart";
+import { WidgetCofig } from "../types";
 import ChartContainer from "./ChartContainer";
 
-export interface WidgetInfomation {
-  id: number;
-  type: ChartType;
-  name: string;
-  actions: unknown[];
+interface IWidgetProps {
+  config: WidgetCofig;
 }
 
-interface IWidget {
-  data: WidgetInfomation;
-}
-
-const Widget: FunctionComponent<IWidget> = ({ data }) => {
+const Widget: FunctionComponent<IWidgetProps> = ({ config }) => {
   return (
     <div>
-      <ChartContainer type={data.type} />
+      <Typography.Title level={2}>{config.name}</Typography.Title>
+      <ChartContainer config={config.chart} />
     </div>
   );
 };
