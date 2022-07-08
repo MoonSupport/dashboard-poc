@@ -1,43 +1,14 @@
-import { useEffect, useState } from "react";
-import api, { OPEN_API_RESULT } from "./api";
-const HOUR = 1000 * 60 * 60;
+import { QueryClient, QueryClientProvider } from "react-query";
+import DashBoardPage from "./components/DashBoardPage";
+
+const queryClient = new QueryClient();
+
+// SPA ROOT
 function App() {
-  const [actAgent, setActAgent] = useState<undefined | OPEN_API_RESULT<"">>();
-  const [httpcSeries, setHttpcSeries] = useState<
-    undefined | OPEN_API_RESULT<"json">
-  >();
-
-  useEffect(() => {
-    api.spot("act_agent").then((result) => {
-      setActAgent(result);
-    });
-    api
-      .series("exception/{stime}/{etime}", {
-        stime: Date.now() - HOUR,
-        etime: Date.now(),
-      })
-      .then((result) => {
-        setHttpcSeries(result);
-      });
-  }, []);
-
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Open API (Application)</h1>
-      <a
-        href="https://docs.whatap.io/kr/appendix/open_api_application.pdf"
-        target="_blank"
-        rel="noreferrer"
-      >
-        가이드 문서
-      </a>
-      <h2>프로젝트 API 예시</h2>
-      <h3>Spot 정보 조회 URL</h3>
-      <pre>{JSON.stringify(actAgent, null, 4)}</pre>
-      <hr />
-      <h3>통계 정보 조회 URL</h3>
-      <pre>{JSON.stringify(httpcSeries, null, 4)}</pre>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <DashBoardPage />
+    </QueryClientProvider>
   );
 }
 

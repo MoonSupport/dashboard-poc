@@ -40,6 +40,8 @@ const OPEN_API = {
   },
   json: {
     "exception/{stime}/{etime}": "Exception 발생 ",
+    "transaction/{stime}/{etime}": "트랜잭션 발생",
+    "visitor_5m/{stime}/{etime}": "활성화된 스레드풀",
   },
 };
 
@@ -66,6 +68,7 @@ interface ExceptionRecord {
   classHash: number;
   count: number;
   msg: string;
+  // "o" prefix는 object를 뜻하며 서버 인스턴스 하나를 의미함
   oids: number[];
   okindNames: string[];
   onames: string[];
