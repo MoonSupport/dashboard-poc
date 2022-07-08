@@ -64,9 +64,10 @@ export interface SERIALIZED_OPEN_API<T extends OPEN_API_TYPE> {
 type SPOT_DATA = number;
 
 interface ExceptionRecord {
+  count: number;
+  time: number;
   class: string;
   classHash: number;
-  count: number;
   msg: string;
   // "o" prefix는 object를 뜻하며 서버 인스턴스 하나를 의미함
   oids: number[];
@@ -77,7 +78,6 @@ interface ExceptionRecord {
   service: string;
   serviceHash: number;
   snapSeq: string;
-  time: number;
 }
 
 type SERIES_DATA = {
@@ -88,6 +88,7 @@ type SERIES_DATA = {
 
 export interface OPEN_API_RESULT<T extends OPEN_API_TYPE> {
   key: OPEN_API_KEY<T>;
+  type: T;
   name: typeof OPEN_API[T][OPEN_API_KEY<T>];
   data: T extends "" ? SPOT_DATA : SERIES_DATA;
 }
@@ -113,6 +114,7 @@ const getOpenApi =
         .then((response) => response.json())
         .then<OPEN_API_RESULT<T>>((data) => ({
           key,
+          type,
           name,
           data,
         }))
@@ -121,4 +123,4 @@ const getOpenApi =
 const spot = getOpenApi<"">("");
 const series = getOpenApi<"json">("json");
 
-export default { spot, series };
+export default { spot, series, getPath };
