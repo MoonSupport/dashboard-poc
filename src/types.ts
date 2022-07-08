@@ -1,22 +1,32 @@
-export interface DashBoardValue {}
+import { OPEN_API_KEY, OPEN_API_RESULT } from "./api";
 
-interface WidgetValue {}
+export type ChartType = "infomatics" | "bar" | "line";
 
-interface ChartValue {}
-
-interface InfomaticsValue {
-  label: string;
-  data: number;
+export interface DashboardConfig {
+  id: number;
+  name: string;
+  widgets: WidgetCofig[];
 }
 
-interface BarChartValue {
-  label: string;
-  data: number;
+export interface WidgetCofig {
+  id: number;
+  name: string;
+  chart: ChartConfig;
 }
 
-interface LineChartValue {
-  xField: string;
-  yField: string;
-  x: number;
-  y: number;
+export interface ChartConfig {
+  type: ChartType;
+  spot: OPEN_API_KEY<"">[];
+  serise: OPEN_API_KEY<"json">[];
 }
+
+export type ALL_OPEN_API_KEY = OPEN_API_KEY<""> | OPEN_API_KEY<"json">;
+
+export type ChartTableData = {
+  status: "fulfilled";
+  value: OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">;
+};
+
+export type ChartTable = {
+  [key in ALL_OPEN_API_KEY]: ChartTableData;
+};
