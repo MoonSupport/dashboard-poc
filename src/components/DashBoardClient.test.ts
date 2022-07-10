@@ -242,4 +242,80 @@ describe("[DashBoardClient]", () => {
       value: expectedSeriseValue,
     });
   });
+
+  test("fetch에 reject된 spot에 대해서 다음 update시에 최신 값으로 반영된다.", async () => {
+    const initNow = Date.now();
+    const spotValue = "Too many Request";
+    const seriseValue = {
+      data: {
+        records: [
+          {
+            classHash: -1811136020,
+            msg: "Sql Exception",
+            count: 4,
+            time: initNow,
+            okindNames: ["demo-okind-0"],
+          },
+        ],
+        retrievedTotal: 1110,
+        total: 1110,
+      },
+      type: "json",
+      key: "exception/{stime}/{etime}",
+      name: "Exception 발생",
+    };
+    const mockSpot = (key: any) => Promise.reject(spotValue);
+    const mockSerise = (key: any) => Promise.resolve(seriseValue);
+    const mockApi = {
+      spot: mockSpot as any,
+      series: mockSerise as any,
+      getPath: mockGetPath,
+    } as OPEN_API;
+    const now = Date.now();
+    const dashboardClient = new DashBoardClient(
+      mockApi,
+      Object.assign(mockDashboardConfig, {
+        widgets: [
+          {
+            id: 1,
+            name: "자원 사용 여부",
+            chart: {
+              type: "bar",
+              spot: ["act_agent"],
+              serise: ["exception/{stime}/{etime}"],
+            },
+          },
+        ],
+        time: now,
+      })
+    );
+    const fetchResult = await dashboardClient.fetch();
+    expect(fetchResult.act_agent).toStrictEqual({
+      reason: "Too many Request",
+      status: "rejected",
+    });
+    expect(fetchResult["exception/{stime}/{etime}"]).toStrictEqual({
+      status: "fulfilled",
+      value: {
+        data: {
+          records: [
+            {
+              classHash: -1811136020,
+              count: 4,
+              msg: "Sql Exception",
+              okindNames: ["demo-okind-0"],
+              time: initNow,
+            },
+          ],
+          retrievedTotal: 1110,
+          total: 1110,
+        },
+        key: "exception/{stime}/{etime}",
+        name: "Exception 발생",
+        type: "json",
+      },
+    });
+
+    // await dashboardClient.refetch()
+  });
 });

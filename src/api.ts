@@ -120,6 +120,10 @@ const getOpenApi =
           name,
           data,
         }))
+        .catch((reason) => ({
+          key,
+          reason,
+        }))
     );
 
 const spot = getOpenApi<"">("");
