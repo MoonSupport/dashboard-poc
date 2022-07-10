@@ -1,6 +1,6 @@
 import { FunctionComponent } from "react";
 import { ChartConfig } from "../types";
-import ChartImplement from "./Chart";
+import ChartImplementation from "./ChartImplementation";
 import { useDashBoard } from "./DashBoard";
 
 interface IChartContainerProps {
@@ -9,7 +9,7 @@ interface IChartContainerProps {
 
 const ChartContainer: FunctionComponent<IChartContainerProps> = ({ config }) => {
   const { bulkFindByKeys } = useDashBoard();
-  const Chart = ChartImplement[config.type];
+  const Chart = ChartImplementation[config.type];
 
   const data = bulkFindByKeys([...config.spot, ...config.serise]);
   return <Chart datas={data} />;

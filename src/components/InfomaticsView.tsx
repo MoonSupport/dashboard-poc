@@ -1,7 +1,8 @@
 import { FunctionComponent } from "react";
+import { IChartProps } from "./ChartImplementation";
 
-const InfomaticsView: FunctionComponent = () => {
-  return <div>InfomaticsView</div>;
+const InfomaticsView: FunctionComponent<IChartProps> = ({ datas }) => {
+  return <div data-testid="infomatics">InfomaticsView</div>;
 };
 
 export default InfomaticsView;

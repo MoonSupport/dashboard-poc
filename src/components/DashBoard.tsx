@@ -6,22 +6,24 @@ import {
   useEffect,
   useState,
 } from "react";
-import api, { OPEN_API_KEY, OPEN_API_RESULT } from "../api";
-import { HOUR } from "../constants";
+import api, { OPEN_API_RESULT } from "../api";
+import { FIVE_SECONDS } from "../constants";
+import Scheduler from "../Scheduler";
 import {
   ALL_OPEN_API_KEY,
   ChartTable,
   ChartTableData,
-  DashboardConfig,
+  DashBoardConfig,
 } from "../types";
+import DashBoardClient from "./DashBoardClient";
 
 interface IDashBoardProps {
   children: ReactNode;
-  config: DashboardConfig;
+  config: DashBoardConfig;
 }
 
 interface DashBoardValue {
-  config: DashboardConfig;
+  config: DashBoardConfig;
   findByKey: (key: ALL_OPEN_API_KEY) => ChartTableData;
   bulkFindByKeys: (keys: ALL_OPEN_API_KEY[]) => ChartTableData[];
 }
@@ -33,9 +35,9 @@ export const useDashBoard = (): DashBoardValue => {
   return value;
 };
 
-export const createModel = <Data,>(data: Data) => {
+export const createModel = <Data,>(data: Data | undefined) => {
   const findByKey = (key: keyof Data) => {
-    return data ? data[key] : {};
+    return data ? data[key] : ({} as ChartTableData);
   };
 
   const bulkFindByKeys = (keys: (keyof Data)[]) => {
@@ -60,56 +62,40 @@ export const serializeChartTable = (
 const DashBoard: FunctionComponent<IDashBoardProps> = ({ children, config }) => {
   const [data, setData] = useState<ChartTable | undefined>();
 
-  const now = Date.now();
-
-  const spotsToRequest = config.widgets.reduce(
-    (arr, widget) => arr.concat(widget.chart.spot),
-    [] as OPEN_API_KEY<"">[]
-  );
-  const seriseToRequest = config.widgets.reduce(
-    (arr, widget) => {
-      const request = widget.chart.serise.map((key) => ({
-        key,
-        param: {
-          stime: now - HOUR,
-          etime: now,
-        },
-      }));
-      return arr.concat(request);
-    },
-    [] as {
-      key: OPEN_API_KEY<"json">;
-      param: {
-        stime: number;
-        etime: number;
-      };
-    }[]
-  );
+  const dashboardClient = new DashBoardClient(api, config);
+  const scheduler = new Scheduler({ interval: FIVE_SECONDS * 2 });
 
   useEffect(() => {
-    const spotPromises = spotsToRequest.map((key) => api.spot(key));
-    const serisePromises = seriseToRequest.map(({ key, param }) =>
-      api.series(key, param)
-    );
-    const response = Promise.allSettled([...spotPromises, ...serisePromises]);
-    response.then((value) => {
-      const chartTable = serializeChartTable(
-        [...spotsToRequest, ...seriseToRequest] as any,
-        value
-      );
+    const chartTablePromise = dashboardClient.fetch();
+    chartTablePromise.then((chartTable) => {
       setData(chartTable);
+      scheduler.continuousRetchByInterval(() => {
+        dashboardClient
+          .refetch(
+            dashboardClient.lastFetchTime,
+            dashboardClient.lastFetchTime + FIVE_SECONDS * 2
+          )
+          .then((v) => {
+            if (v) {
+              setData({ ...v });
+            }
+          });
+      });
     });
   }, []);
 
-  const { findByKey, bulkFindByKeys } = createModel(data);
+  const { findByKey, bulkFindByKeys } = createModel<ChartTable>(data);
 
-  const value = {
-    config,
-    findByKey,
-    bulkFindByKeys,
-  } as DashBoardValue;
   return (
-    <DashBoardContext.Provider value={value}>{children}</DashBoardContext.Provider>
+    <DashBoardContext.Provider
+      value={{
+        config,
+        findByKey,
+        bulkFindByKeys,
+      }}
+    >
+      {children}
+    </DashBoardContext.Provider>
   );
 };
 

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "react-query";
-import DashBoardPage from "./components/DashBoardPage";
+import DashBoardPage from "./components/pages/DashBoardPage";
 
 const queryClient = new QueryClient();
 

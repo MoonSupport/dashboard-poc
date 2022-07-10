@@ -2,10 +2,13 @@ import { OPEN_API_KEY, OPEN_API_RESULT } from "./api";
 
 export type ChartType = "infomatics" | "bar" | "line";
 
-export interface DashboardConfig {
+export interface DashBoardConfig {
   id: number;
   name: string;
   widgets: WidgetCofig[];
+  time: number;
+  updateInterval?: number;
+  seriesInterval?: number;
 }
 
 export interface WidgetCofig {
@@ -23,7 +26,7 @@ export interface ChartConfig {
 export type ALL_OPEN_API_KEY = OPEN_API_KEY<""> | OPEN_API_KEY<"json">;
 
 export type ChartTableData = {
-  status: "fulfilled";
+  status: "fulfilled" | "rejected";
   value: OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">;
 };
 

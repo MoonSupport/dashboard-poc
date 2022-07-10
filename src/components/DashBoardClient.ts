@@ -12,7 +12,7 @@ class DashBoardClient {
   private seriseToRequest;
   private seriesInterval;
   private updateInterval;
-  private lastFetchTime: number;
+  private _lastFetchTime: number;
   private timeout: NodeJS.Timeout | null;
 
   private isIdle = true;
@@ -25,7 +25,7 @@ class DashBoardClient {
     this.seriesInterval = config.seriesInterval || HOUR;
     this.updateInterval = config.updateInterval || FIVE_SECONDS;
     this.timeout = null;
-    this.lastFetchTime = 0;
+    this._lastFetchTime = 0;
     this.spotsToRequest = config.widgets.reduce(
       (arr, widget) => arr.concat(widget.chart.spot),
       [] as OPEN_API_KEY<"">[]
@@ -63,6 +63,10 @@ class DashBoardClient {
     return this.seriseToRequest;
   }
 
+  public get lastFetchTime() {
+    return this._lastFetchTime;
+  }
+
   public async fetch() {
     this.isIdle = false;
 
@@ -71,70 +75,71 @@ class DashBoardClient {
       this.api.series(key, param)
     );
     const response = Promise.allSettled([...spotPromises, ...serisePromises]);
-    const _this = this;
-    return response.then((value) => {
-      const chartTable = this.serializeChartTable(value);
-      _this.chartTable = chartTable;
-      _this.isIdle = true;
-      _this.lastFetchTime = Date.now();
-      return chartTable;
-    });
+    // const _this = this;
+    return response
+      .then((value) => {
+        const chartTable = this.serializeChartTable(value);
+        this.chartTable = chartTable;
+        return chartTable;
+      })
+      .finally(() => {
+        this.isIdle = true;
+        this._lastFetchTime = Date.now();
+      });
   }
 
   public async refetch(stime: number, etime: number) {
     if (!this.isIdle) return;
     this.isIdle = false;
-    const updateNow = Date.now();
-
     const spotPromises = this.spotsToRequest.map((key) => this.api.spot(key));
-    const serisePromises = this.seriseToRequest.map(({ key }) =>
-      this.api.series(key, {
+    const serisePromises = this.seriseToRequest.map(({ key }) => {
+      return this.api.series(key, {
         stime,
         etime,
-      })
-    );
-    const response = Promise.allSettled([...spotPromises, ...serisePromises]);
-    const _this = this;
-    return response.then((res) => {
-      const updatedChartTable = this.serializeChartTable(res);
-      Object.entries(updatedChartTable).map(([key, newValue]) => {
-        if (!_this.chartTable) throw new Error("업데이트 할 테이블이 없습니다.");
-
-        if (newValue.value.type === "json") {
-          const tableKey = key as OPEN_API_KEY<"json">;
-          const oldChartTable = _this.chartTable[tableKey]
-            .value as OPEN_API_RESULT<"json">;
-          const shouldLeftOldRecord = oldChartTable.data.records.filter(
-            (record) => record.time > stime
-          );
-
-          const updatedRecords = [
-            ...shouldLeftOldRecord,
-            ...newValue.value.data.records,
-          ];
-          // @ts-ignore
-          _this.chartTable[tableKey].value.data.records = updatedRecords;
-        } else {
-          const tableKey = key as OPEN_API_KEY<"">;
-          _this.chartTable[tableKey] = newValue;
-        }
       });
-      _this.isIdle = true;
-      _this.lastFetchTime = Date.now();
-      return _this.chartTable;
     });
-  }
+    const response = Promise.allSettled([...spotPromises, ...serisePromises]);
 
-  public async continuousRetchByInterval() {
-    this.timeout = setTimeout(() => {
-      this.refetch(this.lastFetchTime, Date.now());
-      this.continuousRetchByInterval();
-    }, this.updateInterval);
-  }
+    return response
+      .then((res) => {
+        const updatedChartTable = this.serializeChartTable(res);
+        Object.entries(updatedChartTable).map(([key, newValue]) => {
+          if (!this.chartTable) throw new Error("업데이트 할 테이블이 없습니다.");
+          if (newValue.status === "rejected") {
+            return this.chartTable;
+          }
 
-  public async stopRefetchByInterval() {
-    if (this.timeout) clearTimeout(this.timeout);
-    this.timeout = null;
+          if (newValue.value.type === "json") {
+            const tableKey = key as OPEN_API_KEY<"json">;
+            const oldChartTable = this.chartTable[tableKey]
+              .value as OPEN_API_RESULT<"json">;
+
+            if (!oldChartTable) {
+              return;
+            }
+
+            const shouldLeftOldRecord = oldChartTable.data.records.filter(
+              (record) => record.time > stime
+            );
+
+            const updatedRecords = [
+              ...shouldLeftOldRecord,
+              ...newValue.value.data.records,
+            ];
+            // @ts-ignore
+            this.chartTable[tableKey].value.data.records = updatedRecords;
+          } else {
+            const tableKey = key as OPEN_API_KEY<"">;
+            this.chartTable[tableKey] = newValue;
+          }
+        });
+
+        return this.chartTable;
+      })
+      .finally(() => {
+        this._lastFetchTime = Date.now();
+        this.isIdle = true;
+      });
   }
 
   private serializeChartTable(

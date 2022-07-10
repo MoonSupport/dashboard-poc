@@ -37,6 +37,6 @@ describe("[Widget]", () => {
         }}
       />
     );
-    getByTestId(container, "infomatics");
+    expect(getByTestId(container, "infomatics")).toBeTruthy();
   });
 });

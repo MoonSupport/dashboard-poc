@@ -7,8 +7,8 @@ const OPEN_API_HEADERS = Object.freeze({
 
 const OPEN_API_ROOT = "https://service.whatap.io/open/api";
 
-type OPEN_API_TYPE = keyof typeof OPEN_API;
-type OPEN_API_KEY<T extends OPEN_API_TYPE> = keyof typeof OPEN_API[T];
+export type OPEN_API_TYPE = keyof typeof OPEN_API;
+export type OPEN_API_KEY<T extends OPEN_API_TYPE> = keyof typeof OPEN_API[T];
 
 interface Param {
   stime?: number;
@@ -45,7 +45,9 @@ const OPEN_API = {
   },
 };
 
-const getPath = (url: string, param: Param = {}) => {
+type IGetPath = (url: string, param?: Param | undefined) => string;
+
+const getPath: IGetPath = (url, param = {}) => {
   let path = url;
   for (const key in param) {
     // https://github.com/microsoft/TypeScript/issues/13046
@@ -90,7 +92,7 @@ export interface OPEN_API_RESULT<T extends OPEN_API_TYPE> {
   key: OPEN_API_KEY<T>;
   type: T;
   name: typeof OPEN_API[T][OPEN_API_KEY<T>];
-  data: T extends "" ? SPOT_DATA : SERIES_DATA;
+  data: T extends "json" ? ("json" extends T ? SERIES_DATA : SPOT_DATA) : SPOT_DATA;
 }
 
 const getOpenApi =
@@ -123,4 +125,13 @@ const getOpenApi =
 const spot = getOpenApi<"">("");
 const series = getOpenApi<"json">("json");
 
-export default { spot, series, getPath };
+export interface OPEN_API {
+  spot: (key: OPEN_API_KEY<"">) => Promise<OPEN_API_RESULT<"">>;
+  series: (
+    key: OPEN_API_KEY<"json">,
+    param?: Param | undefined
+  ) => Promise<OPEN_API_RESULT<"json">>;
+  getPath: IGetPath;
+}
+
+export default { spot, series, getPath } as OPEN_API;

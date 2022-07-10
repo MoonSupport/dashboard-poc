@@ -1,26 +1,14 @@
+import { useDashBoard } from "./DashBoard";
 import DashBoardGrid from "./DashBoardGrid";
-import Widget, { WidgetInfomation } from "./Widget";
-
-interface DashBoardInformation {
-  widgets: WidgetInfomation[];
-}
+import Widget from "./Widget";
 
 const MyDashBoard = () => {
-  const dashBoardInfomation = {
-    widgets: [
-      {
-        id: 1,
-        type: "bar",
-        name: "액티브 스테이터스",
-        actions: [],
-      },
-    ],
-  } as DashBoardInformation;
+  const { config } = useDashBoard();
 
   return (
     <DashBoardGrid>
-      {dashBoardInfomation.widgets.map((widgetInfo) => (
-        <Widget key={widgetInfo.id} data={widgetInfo} />
+      {config.widgets.map((widget) => (
+        <Widget key={widget.id} config={widget} />
       ))}
     </DashBoardGrid>
   );

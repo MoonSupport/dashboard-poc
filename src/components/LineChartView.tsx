@@ -1,10 +1,8 @@
 import { FunctionComponent } from "react";
-import { ChartProps } from "./Chart";
+import { IChartProps } from "./ChartImplementation";
 
-interface ILineChartProps extends ChartProps {}
-
-const LineChart: FunctionComponent<ILineChartProps> = () => {
-  return <div>LineChart</div>;
+const LineChart: FunctionComponent<IChartProps> = ({ datas }) => {
+  return <div data-testid="line">LineChart</div>;
 };
 
 export default LineChart;
