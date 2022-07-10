@@ -8,7 +8,7 @@ export interface DashBoardConfig {
   widgets: WidgetCofig[];
   time: number;
   updateInterval?: number;
-  seriesInterval?: number;
+  seriesWidth?: number;
 }
 
 export interface WidgetCofig {
@@ -27,7 +27,8 @@ export type ALL_OPEN_API_KEY = OPEN_API_KEY<""> | OPEN_API_KEY<"json">;
 
 export type ChartTableData = {
   status: "fulfilled" | "rejected";
-  value: OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">;
+  value?: OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">;
+  reason?: any;
 };
 
 export type ChartTable = {

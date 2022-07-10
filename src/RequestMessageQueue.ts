@@ -62,6 +62,12 @@ class RequestMessageQueue {
     const target = this.find(key);
     if (target) target.failCount++;
   }
+
+  map(
+    callback: (value: RequestMessage, index: number, array: RequestMessage[]) => any
+  ) {
+    return this.container.map(callback);
+  }
 }
 
 export default RequestMessageQueue;

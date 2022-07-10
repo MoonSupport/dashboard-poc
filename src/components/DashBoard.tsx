@@ -72,8 +72,10 @@ const DashBoard: FunctionComponent<IDashBoardProps> = ({ children, config }) => 
       scheduler.continuousRetchByInterval(() => {
         dashboardClient
           .refetch(
-            dashboardClient.lastFetchTime,
-            dashboardClient.lastFetchTime + FIVE_SECONDS * 2
+            Date.now(),
+            Date.now() + FIVE_SECONDS
+            // dashboardClient.lastFetchTime,
+            // dashboardClient.lastFetchTime + FIVE_SECONDS * 2
           )
           .then((v) => {
             if (v) {
