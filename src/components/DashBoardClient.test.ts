@@ -32,14 +32,14 @@ describe("[DashBoardClient]", () => {
     const mockGetPath = jest.fn();
     mockSpot.mockImplementation(() =>
       Promise.resolve({
-        key: "key",
+        key: "act_agent",
         type: "",
         name: "test",
       })
     );
     mockSerise.mockImplementation(() =>
       Promise.resolve({
-        key: "key",
+        key: "exception/{stime}/{etime}",
         type: "json",
         name: "test",
       })
@@ -53,16 +53,26 @@ describe("[DashBoardClient]", () => {
     const now = Date.now();
     const dashboardClient = new DashBoardClient(
       mockApi,
-      Object.assign(mockDashboardConfig, { time: now })
+      Object.assign(mockDashboardConfig, {
+        widgets: [
+          {
+            id: 1,
+            name: "자원 사용 여부",
+            chart: {
+              type: "bar",
+              spot: ["act_agent", "act_agent"],
+              serise: ["exception/{stime}/{etime}"],
+            },
+          },
+        ],
+      })
     );
     const DUPLICATED_COUNT = 1;
 
     await dashboardClient.fetch();
-    // 첫번째 실행 인자  = act_dbc
-    expect(mockSpot).toBeCalledWith("act_dbc");
-    expect(mockSpot).toBeCalledTimes(
-      mockDashboardConfigSpotKeys.length - DUPLICATED_COUNT
-    );
+    // 첫번째 실행 인자  = act_agent
+    expect(mockSpot).toBeCalledWith("act_agent");
+    expect(mockSpot).toBeCalledTimes(2 - DUPLICATED_COUNT);
     expect(mockSerise).toBeCalledWith("exception/{stime}/{etime}", {
       stime: now - HOUR,
       etime: now,
@@ -183,7 +193,8 @@ describe("[DashBoardClient]", () => {
   });
 
   test("refetch시에 새로운 값이 record에 갱신된다. series라면 stime이하는 제거되고 새로운 값이 record에 추가 된다. {성공, 성공}", async () => {
-    const initNow = Date.now();
+    const now = Date.now();
+
     const spotValue = {
       key: "act_agent",
       type: "",
@@ -198,7 +209,7 @@ describe("[DashBoardClient]", () => {
       oids: [1135435, -2349324, -5386],
       okindNames: ["g.demoAgent"],
       okinds: [-2309329032],
-      time: initNow + FIVE_SECONDS,
+      time: now + FIVE_SECONDS - HOUR, // 1시간 전에서 5초 지남
     };
     const seriseValue = {
       data: {
@@ -211,7 +222,7 @@ describe("[DashBoardClient]", () => {
             oids: [1135435, -2349324, -5386],
             okindNames: ["g.demoAgent"],
             okinds: [-2309329032],
-            time: initNow,
+            time: now - HOUR, // 1시간 전
           },
           shouldLeftRecord,
         ],
@@ -229,7 +240,6 @@ describe("[DashBoardClient]", () => {
       series: mockSerise as any,
       getPath: mockGetPath,
     } as OPEN_API;
-    const now = Date.now();
     const dashboardClient = new DashBoardClient(
       mockApi,
       Object.assign(mockDashboardConfig, {
@@ -265,7 +275,7 @@ describe("[DashBoardClient]", () => {
             oids: [1135435, -2349324, -5386],
             okindNames: ["g.demoAgent"],
             okinds: [-2309329032],
-            time: initNow + FIVE_SECONDS,
+            time: now + FIVE_SECONDS, // 현재 시간에서 5초 지남
           },
         ],
         retrievedTotal: 1110,
@@ -284,10 +294,9 @@ describe("[DashBoardClient]", () => {
       ...updateSeriseValue.data.records,
     ];
 
-    const updatedChartTable = (await dashboardClient.refetch(
-      initNow + FIVE_SECONDS,
-      initNow
-    )) as ChartTable;
+    Date.now = jest.fn(() => now + FIVE_SECONDS); // 현재 시간에서 5초 지남
+
+    const updatedChartTable = (await dashboardClient.refetch()) as ChartTable;
 
     expect(updatedChartTable["act_agent"]).toEqual({
       status: "fulfilled",
@@ -300,8 +309,9 @@ describe("[DashBoardClient]", () => {
   });
 
   test("spot api에서 fetch/refetch가 성공 후에 refetch가 실패 시에, 기존 상태 데이터를 그대로 유지한다. {성공, 실패}", async () => {
+    const spotKey = "act_agent";
     const spotValue = {
-      key: "act_agent",
+      key: spotKey,
       type: "",
       name: "활성화 상태의 에이전트 수",
       data: 12,
@@ -321,7 +331,7 @@ describe("[DashBoardClient]", () => {
             name: "자원 사용 여부",
             chart: {
               type: "bar",
-              spot: ["act_agent"],
+              spot: [spotKey],
               serise: [],
             },
           },
@@ -336,11 +346,12 @@ describe("[DashBoardClient]", () => {
       },
     });
     const reason = "Too many Request";
-    mockApi.spot = (key: any) => Promise.reject(reason);
-    const fail = await dashBoardClient.refetch(
-      Date.now() + FIVE_SECONDS,
-      Date.now() + FIVE_SECONDS * 2
-    );
+    mockApi.spot = (key: any) =>
+      Promise.reject({
+        key: spotKey,
+        reason,
+      });
+    const fail = await dashBoardClient.refetch();
 
     expect(fail).toStrictEqual({
       act_agent: {
@@ -351,6 +362,7 @@ describe("[DashBoardClient]", () => {
   });
 
   test("serise api에서 fetch/refetch가 성공 후에 refetch가 실패 시에, 기존 상태 데이터를 그대로 유지한다. {성공, 실패}", async () => {
+    const seriseKey = "exception/{stime}/{etime}";
     const seriseValue = {
       data: {
         records: [
@@ -368,7 +380,7 @@ describe("[DashBoardClient]", () => {
         total: 1110,
       },
       type: "json",
-      key: "exception/{stime}/{etime}",
+      key: seriseKey,
       name: "Exception 발생",
     } as OPEN_API_RESULT<"json">;
 
@@ -387,7 +399,7 @@ describe("[DashBoardClient]", () => {
             chart: {
               type: "bar",
               spot: [],
-              serise: ["exception/{stime}/{etime}"],
+              serise: [seriseKey],
             },
           },
         ],
@@ -395,20 +407,17 @@ describe("[DashBoardClient]", () => {
     );
     const success = await dashBoardClient.fetch();
     expect(success).toStrictEqual({
-      "exception/{stime}/{etime}": {
+      [seriseKey]: {
         status: "fulfilled",
         value: seriseValue,
       },
     });
     const reason = "Too many Request";
-    mockApi.series = (key: any) => Promise.reject(reason);
-    const fail = await dashBoardClient.refetch(
-      Date.now() + FIVE_SECONDS,
-      Date.now() + FIVE_SECONDS * 2
-    );
+    mockApi.series = (key: any) => Promise.reject({ key: seriseKey, reason });
+    const fail = await dashBoardClient.refetch();
 
     expect(fail).toStrictEqual({
-      "exception/{stime}/{etime}": {
+      [seriseKey]: {
         status: "fulfilled",
         value: seriseValue,
       },
@@ -458,7 +467,7 @@ describe("[DashBoardClient]", () => {
     const mockSpot = (key: any) => Promise.resolve(spotValue);
     mockApi.spot = mockSpot as any;
 
-    await dashboardClient.refetch(now, now);
+    await dashboardClient.refetch();
     expect(fetchResult.act_agent).toStrictEqual({
       status: "fulfilled",
       value: {
@@ -528,7 +537,7 @@ describe("[DashBoardClient]", () => {
     const mockSerise = (key: any) => Promise.resolve(seriseValue);
     mockApi.series = mockSerise as any;
 
-    await dashboardClient.refetch(now, now);
+    await dashboardClient.refetch();
     expect(fetchResult["exception/{stime}/{etime}"]).toStrictEqual({
       status: "fulfilled",
       value: seriseValue,
@@ -536,6 +545,7 @@ describe("[DashBoardClient]", () => {
   });
 
   test("serise api에서 fetch가 실패한 후에 refetch가 성공할 시에, 적절하게 업데이트 된다. {첫 성공, 실패, 실패, 실패, 성공}", async () => {
+    const now = Date.now();
     const seriseValue = {
       data: {
         records: [
@@ -546,7 +556,7 @@ describe("[DashBoardClient]", () => {
             msg: "Sql Exception",
             oids: [1135435, -2349324, -5386],
             okindNames: ["g.demoAgent"],
-            time: Date.now(),
+            time: now - HOUR,
           },
         ],
         retrievedTotal: 1110,
@@ -583,23 +593,18 @@ describe("[DashBoardClient]", () => {
       status: "fulfilled",
       value: seriseValue,
     });
-
     const reason = "Too Many Request";
-    mockApi.series = (key: any) => Promise.reject(reason);
-
-    await dashboardClient.refetch(
-      Date.now() + FIVE_SECONDS,
-      Date.now() + FIVE_SECONDS * 2
-    );
-    await dashboardClient.refetch(
-      Date.now() + FIVE_SECONDS * 2,
-      Date.now() + FIVE_SECONDS * 3
-    );
-    await dashboardClient.refetch(
-      Date.now() + FIVE_SECONDS * 3,
-      Date.now() + FIVE_SECONDS * 4
-    );
-
+    mockApi.series = (key: any) =>
+      Promise.reject({
+        key,
+        reason,
+      });
+    Date.now = jest.fn(() => now + FIVE_SECONDS);
+    await dashboardClient.refetch();
+    Date.now = jest.fn(() => now + FIVE_SECONDS * 2);
+    await dashboardClient.refetch();
+    Date.now = jest.fn(() => now + FIVE_SECONDS * 3);
+    await dashboardClient.refetch();
     const seriseValue2 = {
       data: {
         records: [
@@ -610,7 +615,7 @@ describe("[DashBoardClient]", () => {
             msg: "Sql Exception",
             oids: [1135435, -2349324, -5386],
             okindNames: ["g.demoAgent"],
-            time: Date.now() + FIVE_SECONDS * 2,
+            time: now - HOUR + FIVE_SECONDS * 4,
           },
         ],
         retrievedTotal: 1110,
@@ -620,12 +625,19 @@ describe("[DashBoardClient]", () => {
       key: "exception/{stime}/{etime}",
       name: "Exception 발생",
     } as OPEN_API_RESULT<"json">;
-    mockApi.series = (key: any) => Promise.resolve(seriseValue2);
+    const mockSerise = jest.fn();
+    mockApi.series = mockSerise;
+    mockSerise.mockImplementation((key: any) => Promise.resolve(seriseValue2));
+    const nextTime = now + FIVE_SECONDS * 4;
+    Date.now = jest.fn(() => nextTime);
+    const FAIL_COUNT = 3;
 
-    const result = await dashboardClient.refetch(
-      Date.now() + FIVE_SECONDS * 4,
-      Date.now() + FIVE_SECONDS * 5
-    );
+    const result = await dashboardClient.refetch();
+
+    expect(mockSerise).toBeCalledWith("exception/{stime}/{etime}", {
+      stime: nextTime - FIVE_SECONDS * (FAIL_COUNT + 1),
+      etime: nextTime,
+    });
     expect(result).toStrictEqual({
       "exception/{stime}/{etime}": {
         status: "fulfilled",

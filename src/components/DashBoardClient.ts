@@ -1,6 +1,6 @@
 import { OPEN_API, OPEN_API_KEY, OPEN_API_RESULT, OPEN_API_TYPE } from "../api";
 import { FIVE_SECONDS, HOUR } from "../constants";
-import RequestMessageQueue from "../RequestMessageQueue";
+import RequestMessageQueue, { RequestMessage } from "../RequestMessageQueue";
 import { ALL_OPEN_API_KEY, ChartTable, DashBoardConfig } from "../types";
 
 class DashBoardClient {
@@ -71,9 +71,7 @@ class DashBoardClient {
       .finally(() => {});
   }
 
-  public async _refetch() {}
-
-  public async refetch(stime: number, etime: number) {
+  public async refetch() {
     this.spotKeys.map((key) => {
       this.requestMessageQueue.push(key, "", "update");
     });
@@ -135,7 +133,7 @@ class DashBoardClient {
             ) {
               const shouldLeftOldRecord = oldChartTable.value.data.records.filter(
                 (record) => {
-                  return record.time >= stime;
+                  return record.time >= now - this.seriesWidth;
                 }
               );
 
@@ -158,7 +156,6 @@ class DashBoardClient {
             }
           }
         });
-
         return this.chartTable;
       })
       .finally(() => {});
@@ -167,8 +164,14 @@ class DashBoardClient {
   private serializeChartTable(
     datas: PromiseSettledResult<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>[]
   ) {
-    return this.keys.reduce((obj, key, index) => {
-      const value = datas[index];
+    return this.keys.reduce((obj, key) => {
+      const value =
+        datas[
+          datas.findIndex((data) => {
+            if (data.status === "fulfilled") return data.value.key == key;
+            else return data.reason.key == key;
+          })
+        ];
       return Object.assign(obj, {
         [key]: value,
       });
