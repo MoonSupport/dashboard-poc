@@ -1,3 +1,4 @@
+import { Row } from "antd";
 import { FunctionComponent, ReactNode } from "react";
 
 interface IDashBoardPage {
@@ -5,7 +6,7 @@ interface IDashBoardPage {
 }
 
 const DashBoardGrid: FunctionComponent<IDashBoardPage> = ({ children }) => {
-  return <div>{children}</div>;
+  return <Row>{children}</Row>;
 };
 
 export default DashBoardGrid;

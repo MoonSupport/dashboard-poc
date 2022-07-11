@@ -1,5 +1,7 @@
 import { getByTestId, render } from "@testing-library/react";
+import { mockResDatas } from "../fixtures";
 import ChartContainer from "./ChartContainer";
+import DashBoard from "./DashBoard";
 
 const mockBulkFindByKeys = jest.fn();
 
@@ -37,6 +39,7 @@ describe("[ChartContainer]", () => {
   });
 
   test("타입에 맞는 차트를 그린다.", () => {
+    mockBulkFindByKeys.mockImplementation(() => mockResDatas);
     const { container } = render(
       <ChartContainer
         config={{

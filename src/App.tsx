@@ -1,15 +1,9 @@
-import { QueryClient, QueryClientProvider } from "react-query";
 import DashBoardPage from "./components/pages/DashBoardPage";
-
-const queryClient = new QueryClient();
+import "antd/dist/antd.css";
 
 // SPA ROOT
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <DashBoardPage />
-    </QueryClientProvider>
-  );
+  return <DashBoardPage />;
 }
 
 export default App;

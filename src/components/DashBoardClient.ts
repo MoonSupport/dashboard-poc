@@ -4,6 +4,7 @@ import RequestMessageQueue, { RequestMessage } from "../RequestMessageQueue";
 import { ALL_OPEN_API_KEY, ChartTable, DashBoardConfig } from "../types";
 
 class DashBoardClient {
+  private _config;
   private api;
   private spotKeys: OPEN_API_KEY<"">[];
   private seriseKeys: OPEN_API_KEY<"json">[];
@@ -16,6 +17,7 @@ class DashBoardClient {
   public chartTable: ChartTable | null;
 
   constructor(api: OPEN_API, config: DashBoardConfig) {
+    this._config = config;
     this.api = api;
     this.seriesWidth = config.seriesWidth || HOUR;
     this.updateInterval = config.updateInterval || FIVE_SECONDS;
@@ -176,6 +178,10 @@ class DashBoardClient {
         [key]: value,
       });
     }, {} as ChartTable);
+  }
+
+  public get config() {
+    return this._config;
   }
 }
 

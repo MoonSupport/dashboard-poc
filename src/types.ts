@@ -28,7 +28,7 @@ export type ALL_OPEN_API_KEY = OPEN_API_KEY<""> | OPEN_API_KEY<"json">;
 export type ChartTableData = {
   status: "fulfilled" | "rejected";
   value?: OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">;
-  reason?: any;
+  reason?: { key: ALL_OPEN_API_KEY; reason: string };
 };
 
 export type ChartTable = {

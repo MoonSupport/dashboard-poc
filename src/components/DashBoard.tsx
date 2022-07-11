@@ -6,7 +6,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import api, { OPEN_API_RESULT } from "../api";
+import { OPEN_API_RESULT } from "../api";
 import { FIVE_SECONDS } from "../constants";
 import Scheduler from "../Scheduler";
 import {
@@ -19,7 +19,7 @@ import DashBoardClient from "./DashBoardClient";
 
 interface IDashBoardProps {
   children: ReactNode;
-  config: DashBoardConfig;
+  dashboardClient: DashBoardClient;
 }
 
 interface DashBoardValue {
@@ -59,23 +59,25 @@ export const serializeChartTable = (
   }, {} as ChartTable);
 };
 
-const DashBoard: FunctionComponent<IDashBoardProps> = ({ children, config }) => {
+const DashBoardProvider: FunctionComponent<IDashBoardProps> = ({
+  children,
+  dashboardClient,
+}) => {
   const [data, setData] = useState<ChartTable | undefined>();
 
-  const dashboardClient = new DashBoardClient(api, config);
   const scheduler = new Scheduler({ interval: FIVE_SECONDS * 2 });
 
   useEffect(() => {
     const chartTablePromise = dashboardClient.fetch();
     chartTablePromise.then((chartTable) => {
       setData(chartTable);
-      scheduler.continuousRetchByInterval(() => {
-        dashboardClient.refetch().then((v) => {
-          if (v) {
-            setData({ ...v });
-          }
-        });
-      });
+      // scheduler.continuousRetchByInterval(() => {
+      //   dashboardClient.refetch().then((v) => {
+      //     if (v) {
+      //       setData({ ...v });
+      //     }
+      //   });
+      // });
     });
   }, []);
 
@@ -84,7 +86,7 @@ const DashBoard: FunctionComponent<IDashBoardProps> = ({ children, config }) => 
   return (
     <DashBoardContext.Provider
       value={{
-        config,
+        config: dashboardClient.config,
         findByKey,
         bulkFindByKeys,
       }}
@@ -94,4 +96,4 @@ const DashBoard: FunctionComponent<IDashBoardProps> = ({ children, config }) => 
   );
 };
 
-export default DashBoard;
+export default DashBoardProvider;
