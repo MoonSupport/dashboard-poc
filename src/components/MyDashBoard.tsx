@@ -1,5 +1,5 @@
 import { Col } from "antd";
-import { useDashBoard } from "./DashBoard";
+import { useDashBoard } from "./DashBoardProvider";
 import DashBoardGrid from "./DashBoardGrid";
 import Widget from "./Widget";
 
@@ -9,8 +9,8 @@ const MyDashBoard = () => {
   return (
     <DashBoardGrid>
       {config.widgets.map((widget) => (
-        <Col xs={24} md={12} lg={8}>
-          <Widget key={widget.id} config={widget} />
+        <Col key={widget.id} xs={24} md={12} lg={12}>
+          <Widget config={widget} />
         </Col>
       ))}
     </DashBoardGrid>

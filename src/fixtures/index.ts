@@ -25,15 +25,35 @@ export const mockDashboardConfig: DashBoardConfig = {
     },
     {
       id: 3,
-      name: "Exception 발생 여부",
+      name: "Sql Exception 발생 여부",
       chart: {
         type: "line",
         spot: [],
         serise: ["exception/{stime}/{etime}"],
+        seriseKey: "Sql Exception",
+      },
+    },
+    {
+      id: 4,
+      name: "Internal RuntimeException 발생 여부",
+      chart: {
+        type: "line",
+        spot: [],
+        serise: ["exception/{stime}/{etime}"],
+        seriseKey: "Internal RuntimeException",
+      },
+    },
+    {
+      id: 5,
+      name: "Unknown Error!! 발생 여부",
+      chart: {
+        type: "line",
+        spot: [],
+        serise: ["exception/{stime}/{etime}"],
+        seriseKey: "Unknown Error!!",
       },
     },
   ],
-  time: Date.now(),
 };
 
 export const mockDashboardConfigSpotKeys = [
