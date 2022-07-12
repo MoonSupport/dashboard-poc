@@ -12,6 +12,7 @@ export type ChartComponent =
 
 export interface IChartProps {
   datas: ChartTableData[];
+  seriseKey?: string;
 }
 
 const ChartImplementation: { [key in ChartType]: ChartComponent } = {

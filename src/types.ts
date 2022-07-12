@@ -6,7 +6,6 @@ export interface DashBoardConfig {
   id: number;
   name: string;
   widgets: WidgetCofig[];
-  time: number;
   updateInterval?: number;
   seriesWidth?: number;
 }
@@ -21,6 +20,7 @@ export interface ChartConfig {
   type: ChartType;
   spot: OPEN_API_KEY<"">[];
   serise: OPEN_API_KEY<"json">[];
+  seriseKey?: string;
 }
 
 export type ALL_OPEN_API_KEY = OPEN_API_KEY<""> | OPEN_API_KEY<"json">;

@@ -285,8 +285,8 @@ describe("[DashBoardClient]", () => {
       key: "exception/{stime}/{etime}",
       name: "Exception 발생",
     };
-    mockApi.spot = (key: any) => Promise.resolve(updateSpotValue) as any;
-    mockApi.series = (key: any) => Promise.resolve(updateSeriseValue) as any;
+    mockApi.spot = (_: any) => Promise.resolve(updateSpotValue) as any;
+    mockApi.series = (_: any) => Promise.resolve(updateSeriseValue) as any;
 
     const expectedSeriseValue = JSON.parse(JSON.stringify(updateSeriseValue));
     expectedSeriseValue.data.records = [

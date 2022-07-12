@@ -71,13 +71,13 @@ const DashBoardProvider: FunctionComponent<IDashBoardProps> = ({
     const chartTablePromise = dashboardClient.fetch();
     chartTablePromise.then((chartTable) => {
       setData(chartTable);
-      // scheduler.continuousRetchByInterval(() => {
-      //   dashboardClient.refetch().then((v) => {
-      //     if (v) {
-      //       setData({ ...v });
-      //     }
-      //   });
-      // });
+      scheduler.continuousRetchByInterval(() => {
+        dashboardClient.refetch().then((v) => {
+          if (v) {
+            setData({ ...v });
+          }
+        });
+      });
     });
   }, []);
 

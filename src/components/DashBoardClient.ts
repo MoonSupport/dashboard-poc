@@ -1,6 +1,6 @@
-import { OPEN_API, OPEN_API_KEY, OPEN_API_RESULT, OPEN_API_TYPE } from "../api";
+import { OPEN_API, OPEN_API_KEY, OPEN_API_RESULT } from "../api";
 import { FIVE_SECONDS, HOUR } from "../constants";
-import RequestMessageQueue, { RequestMessage } from "../RequestMessageQueue";
+import RequestMessageQueue from "../RequestMessageQueue";
 import { ALL_OPEN_API_KEY, ChartTable, DashBoardConfig } from "../types";
 
 class DashBoardClient {
@@ -56,21 +56,19 @@ class DashBoardClient {
     });
 
     const response = Promise.allSettled(requestPromise);
-    return response
-      .then((value) => {
-        const chartTable = this.serializeChartTable(value);
-        Object.entries(chartTable).map(([key, value]) => {
-          if (value.status === "fulfilled") {
-            this.requestMessageQueue.consume(key as ALL_OPEN_API_KEY);
-          } else {
-            this.requestMessageQueue.fail(key as ALL_OPEN_API_KEY);
-          }
-        });
+    return response.then((value) => {
+      const chartTable = this.serializeChartTable(value);
+      Object.entries(chartTable).map(([key, value]) => {
+        if (typeof value.value !== "undefined") {
+          this.requestMessageQueue.consume(key as ALL_OPEN_API_KEY);
+        } else {
+          this.requestMessageQueue.fail(key as ALL_OPEN_API_KEY);
+        }
+      });
 
-        this.chartTable = chartTable;
-        return chartTable;
-      })
-      .finally(() => {});
+      this.chartTable = chartTable;
+      return chartTable;
+    });
   }
 
   public async refetch() {
@@ -108,59 +106,57 @@ class DashBoardClient {
 
     const response = Promise.allSettled(requestPromise);
 
-    return response
-      .then((res) => {
-        const updatedChartTable = this.serializeChartTable(res);
-        Object.entries(updatedChartTable).map(([key, newValue]) => {
-          if (!this.chartTable) throw new Error("업데이트 할 테이블이 없습니다.");
+    return response.then((res) => {
+      const updatedChartTable = this.serializeChartTable(res);
+      Object.entries(updatedChartTable).map(([key, newValue]) => {
+        if (!this.chartTable) throw new Error("업데이트 할 테이블이 없습니다.");
 
-          const tableKey = key as OPEN_API_KEY<"">;
-          const oldChartTable = this.chartTable[tableKey];
+        const tableKey = key as ALL_OPEN_API_KEY;
+        const oldChartTable = this.chartTable[tableKey];
+        // 성공한 적 없음
+        if (typeof oldChartTable?.reason !== "undefined") {
+          if (newValue.status === "fulfilled") {
+            this.chartTable[tableKey] = newValue;
+          }
+          // 한 번이라도 성공 함
+        } else {
+          if (typeof newValue?.reason !== "undefined") {
+            this.requestMessageQueue.fail(tableKey);
+            return;
+          }
 
-          // 성공한 적 없음
-          if (oldChartTable.status === "rejected" && oldChartTable.reason) {
-            if (newValue.status === "fulfilled") {
-              this.chartTable[tableKey] = newValue;
-            }
-            // 한 번이라도 성공 함
+          if (
+            oldChartTable.value?.type === "json" &&
+            newValue.value?.type === "json"
+          ) {
+            const shouldLeftOldRecord = oldChartTable.value.data.records.filter(
+              (record) => {
+                return record.time >= now - this.seriesWidth;
+              }
+            );
+
+            const updatedRecords = [
+              ...shouldLeftOldRecord,
+              ...newValue.value.data.records,
+            ];
+
+            // @ts-ignore
+            this.chartTable[tableKey].value.data.records = updatedRecords;
           } else {
-            if (newValue.status === "rejected" && newValue.reason) {
+            const tableKey = key as OPEN_API_KEY<"">;
+            if (typeof newValue?.reason !== "undefined") {
               this.requestMessageQueue.fail(tableKey);
               return;
             }
 
-            if (
-              oldChartTable.value?.type === "json" &&
-              newValue.value?.type === "json"
-            ) {
-              const shouldLeftOldRecord = oldChartTable.value.data.records.filter(
-                (record) => {
-                  return record.time >= now - this.seriesWidth;
-                }
-              );
-
-              const updatedRecords = [
-                ...shouldLeftOldRecord,
-                ...newValue.value.data.records,
-              ];
-
-              // @ts-ignore
-              this.chartTable[tableKey].value.data.records = updatedRecords;
-            } else {
-              const tableKey = key as OPEN_API_KEY<"">;
-              if (newValue.status === "rejected" && newValue.reason) {
-                this.requestMessageQueue.fail(tableKey);
-                return;
-              }
-
-              this.chartTable[tableKey] = newValue;
-              this.requestMessageQueue.consume(tableKey);
-            }
+            this.chartTable[tableKey] = newValue;
+            this.requestMessageQueue.consume(tableKey);
           }
-        });
-        return this.chartTable;
-      })
-      .finally(() => {});
+        }
+      });
+
+      return this.chartTable;
+    });
   }
 
   private serializeChartTable(

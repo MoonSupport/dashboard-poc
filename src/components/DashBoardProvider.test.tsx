@@ -1,5 +1,5 @@
 import { mockResDatas } from "../fixtures";
-import { createModel, serializeChartTable } from "./DashBoard";
+import { createModel, serializeChartTable } from "./DashBoardProvider";
 
 describe("[DashBoard]", () => {
   describe("serializeChartTable", () => {

@@ -1,8 +1,7 @@
 import { getByTestId, render } from "@testing-library/react";
-import DashBoard, { useDashBoard } from "./DashBoard";
 import Widget from "./Widget";
 
-jest.mock("./DashBoard", () => ({
+jest.mock("./DashBoardProvider", () => ({
   useDashBoard: () => ({ bulkFindByKeys: () => [] }),
 }));
 

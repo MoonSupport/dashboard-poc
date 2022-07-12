@@ -65,25 +65,8 @@ export interface SERIALIZED_OPEN_API<T extends OPEN_API_TYPE> {
 
 type SPOT_DATA = number;
 
-interface ExceptionRecord {
-  count: number;
-  time: number;
-  class: string;
-  classHash: number;
-  msg: string;
-  // "o" prefix는 object를 뜻하며 서버 인스턴스 하나를 의미함
-  oids: number[];
-  okindNames: string[];
-  onames: string[];
-  onodeNames: unknown[];
-  onodes: unknown[];
-  service: string;
-  serviceHash: number;
-  snapSeq: string;
-}
-
-type SERIES_DATA = {
-  records: ExceptionRecord[];
+export type SERIES_DATA = {
+  records: any[];
   retrievedTotal: number;
   total: number;
 };

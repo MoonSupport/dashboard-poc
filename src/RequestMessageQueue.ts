@@ -23,7 +23,6 @@ export class RequestMessage {
 
 class RequestMessageQueue {
   container: RequestMessage[] = [];
-  constructor() {}
 
   push(key: ALL_OPEN_API_KEY, keyType: OPEN_API_TYPE, type: RequestMessageType) {
     if (this.container.find((requestMessage) => requestMessage.key === key)) {

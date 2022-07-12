@@ -7,7 +7,7 @@ class Scheduler {
     this.timeout = null;
     this.interval = interval || FIVE_SECONDS;
   }
-  public async continuousRetchByInterval(callback: any) {
+  public async continuousRetchByInterval(callback: () => void) {
     this.timeout = setTimeout(() => {
       callback();
       this.continuousRetchByInterval(callback);

@@ -1,12 +1,15 @@
 import { getByTestId, render } from "@testing-library/react";
 import { mockResDatas } from "../fixtures";
 import ChartContainer from "./ChartContainer";
-import DashBoard from "./DashBoard";
 
 const mockBulkFindByKeys = jest.fn();
 
-jest.mock("./DashBoard", () => ({
+jest.mock("./DashBoardProvider", () => ({
   useDashBoard: () => ({ bulkFindByKeys: mockBulkFindByKeys }),
+}));
+
+jest.mock("./ExceptionDataProvider", () => ({
+  useExceptionData: () => ({ data: {} }),
 }));
 
 describe("[ChartContainer]", () => {
