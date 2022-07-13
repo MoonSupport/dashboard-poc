@@ -1,7 +1,6 @@
-import { OPEN_API, OPEN_API_RESULT } from "../api";
 import { FIVE_SECONDS, HOUR } from "../constants";
 import { mockDashboardConfig } from "../fixtures";
-import { PromiseResultTable } from "../types";
+import { IOPEN_API, OPEN_API_RESULT, PromiseSettleResultTable } from "../types";
 import DashBoardClient from "./DashBoardClient";
 
 describe("[DashBoardClient]", () => {
@@ -13,7 +12,7 @@ describe("[DashBoardClient]", () => {
     spot: mockSpot,
     series: mockSerise,
     getPath: mockGetPath,
-  } as OPEN_API;
+  } as IOPEN_API;
 
   const _now = Date.now;
 
@@ -49,7 +48,7 @@ describe("[DashBoardClient]", () => {
       spot: mockSpot,
       series: mockSerise,
       getPath: mockGetPath,
-    } as OPEN_API;
+    } as IOPEN_API;
     const now = Date.now();
     const dashboardClient = new DashBoardClient(
       mockApi,
@@ -113,7 +112,7 @@ describe("[DashBoardClient]", () => {
       spot: mockSpot as any,
       series: mockSerise as any,
       getPath: mockGetPath,
-    } as OPEN_API;
+    } as IOPEN_API;
     const now = Date.now();
     const dashboardClient = new DashBoardClient(
       mockApi,
@@ -160,7 +159,7 @@ describe("[DashBoardClient]", () => {
       spot: mockSpot as any,
       series: mockSerise as any,
       getPath: mockGetPath,
-    } as OPEN_API;
+    } as IOPEN_API;
     const now = Date.now();
     const dashboardClient = new DashBoardClient(
       mockApi,
@@ -239,7 +238,7 @@ describe("[DashBoardClient]", () => {
       spot: mockSpot as any,
       series: mockSerise as any,
       getPath: mockGetPath,
-    } as OPEN_API;
+    } as IOPEN_API;
     const dashboardClient = new DashBoardClient(
       mockApi,
       Object.assign(mockDashboardConfig, {
@@ -297,7 +296,7 @@ describe("[DashBoardClient]", () => {
     Date.now = jest.fn(() => now + FIVE_SECONDS); // 현재 시간에서 5초 지남
 
     const updatedChartTable =
-      (await dashboardClient.refetch()) as PromiseResultTable<
+      (await dashboardClient.refetch()) as PromiseSettleResultTable<
         OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">
       >;
 
@@ -438,7 +437,7 @@ describe("[DashBoardClient]", () => {
       spot: mockRejectSpot as any,
       series: mockSerise as any,
       getPath: mockGetPath,
-    } as OPEN_API;
+    } as IOPEN_API;
     const now = Date.now();
     const dashboardClient = new DashBoardClient(
       mockApi,
@@ -493,7 +492,7 @@ describe("[DashBoardClient]", () => {
       spot: mockSpot as any,
       series: mockRejectSerise as any,
       getPath: mockGetPath,
-    } as OPEN_API;
+    } as IOPEN_API;
     const now = Date.now();
     const dashboardClient = new DashBoardClient(
       mockApi,
@@ -574,7 +573,7 @@ describe("[DashBoardClient]", () => {
       spot: mockSpot as any,
       series: mockRejectSerise as any,
       getPath: mockGetPath,
-    } as OPEN_API;
+    } as IOPEN_API;
     const dashboardClient = new DashBoardClient(
       mockApi,
       Object.assign(mockDashboardConfig, {

@@ -1,11 +1,14 @@
-import { OPEN_API, OPEN_API_KEY, OPEN_API_RESULT } from "../api";
+import { OPEN_API } from "../api";
 import { FIVE_SECONDS, HOUR } from "../constants";
 import RequestMessageQueue from "../RequestMessageQueue";
 import {
   ALL_OPEN_API_KEY,
   DashBoardConfig,
-  IPromiseResultTableData,
-  PromiseResultTable,
+  IOPEN_API,
+  IPromiseSettleResultTableData,
+  OPEN_API_KEY,
+  OPEN_API_RESULT,
+  PromiseSettleResultTable,
 } from "../types";
 
 class DashBoardClient {
@@ -19,11 +22,11 @@ class DashBoardClient {
 
   private requestMessageQueue: RequestMessageQueue;
 
-  public chartTable: PromiseResultTable<
+  public chartTable: PromiseSettleResultTable<
     OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">
   > | null;
 
-  constructor(api: OPEN_API, config: DashBoardConfig) {
+  constructor(api: IOPEN_API, config: DashBoardConfig) {
     this._config = config;
     this.api = api;
     this.seriesWidth = config.seriesWidth || HOUR;
@@ -64,11 +67,11 @@ class DashBoardClient {
 
     const response = Promise.allSettled(requestPromise);
     return response.then((value) => {
-      const promiseResultTable = this.nomalizePromiseResultTable<
+      const PromiseSettleResultTable = this.nomalizePromiseSettleResultTable<
         OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">
       >(value);
 
-      Object.entries(promiseResultTable).map(([key, value]) => {
+      Object.entries(PromiseSettleResultTable).map(([key, value]) => {
         if (value.status === "fulfilled") {
           this.requestMessageQueue.consume(key as ALL_OPEN_API_KEY);
         } else {
@@ -76,8 +79,8 @@ class DashBoardClient {
         }
       });
 
-      this.chartTable = promiseResultTable;
-      return promiseResultTable;
+      this.chartTable = PromiseSettleResultTable;
+      return PromiseSettleResultTable;
     });
   }
 
@@ -117,11 +120,11 @@ class DashBoardClient {
     const response = Promise.allSettled(requestPromise);
 
     return response.then((res) => {
-      const updateedPromiseResultTable = this.nomalizePromiseResultTable<
+      const updateedPromiseSettleResultTable = this.nomalizePromiseSettleResultTable<
         OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">
       >(res);
 
-      Object.entries(updateedPromiseResultTable).map(([key, newValue]) => {
+      Object.entries(updateedPromiseSettleResultTable).map(([key, newValue]) => {
         if (!this.chartTable) throw new Error("업데이트 할 테이블이 없습니다.");
 
         const tableKey = key as ALL_OPEN_API_KEY;
@@ -167,9 +170,9 @@ class DashBoardClient {
     });
   }
 
-  private nomalizePromiseResultTable<T extends IPromiseResultTableData>(
+  private nomalizePromiseSettleResultTable<T extends IPromiseSettleResultTableData>(
     datas: PromiseSettledResult<T>[]
-  ): PromiseResultTable<T> {
+  ): PromiseSettleResultTable<T> {
     return this.keys.reduce((obj, key) => {
       const value = datas.find((data) => {
         if (data.status === "fulfilled") return data.value.key == key;
@@ -179,7 +182,7 @@ class DashBoardClient {
       return Object.assign(obj, {
         [key]: value,
       });
-    }, {} as PromiseResultTable<T>);
+    }, {} as PromiseSettleResultTable<T>);
   }
 
   public get config() {

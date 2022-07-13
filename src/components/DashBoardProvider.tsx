@@ -6,10 +6,15 @@ import {
   useEffect,
   useState,
 } from "react";
-import { OPEN_API_RESULT } from "../api";
 import { FIVE_SECONDS } from "../constants";
 import Scheduler from "../Scheduler";
-import { ALL_OPEN_API_KEY, DashBoardConfig, PromiseResultTable } from "../types";
+import {
+  ALL_OPEN_API_KEY,
+  DashBoardConfig,
+  OPEN_API_RESULT,
+  PromiseSettledOpenApiResult,
+  PromiseSettleResultTable,
+} from "../types";
 import DashBoardClient from "./DashBoardClient";
 
 interface IDashBoardProps {
@@ -19,12 +24,8 @@ interface IDashBoardProps {
 
 interface DashBoardValue {
   config: DashBoardConfig;
-  findByKey: (
-    key: ALL_OPEN_API_KEY
-  ) => PromiseSettledResult<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>;
-  bulkFindByKeys: (
-    keys: ALL_OPEN_API_KEY[]
-  ) => PromiseSettledResult<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>[];
+  findByKey: (key: ALL_OPEN_API_KEY) => PromiseSettledOpenApiResult;
+  bulkFindByKeys: (keys: ALL_OPEN_API_KEY[]) => PromiseSettledOpenApiResult[];
 }
 
 const DashBoardContext = createContext<DashBoardValue | null>(null);
@@ -51,7 +52,8 @@ const DashBoardProvider: FunctionComponent<IDashBoardProps> = ({
   dashboardClient,
 }) => {
   const [data, setData] = useState<
-    PromiseResultTable<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">> | undefined
+    | PromiseSettleResultTable<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>
+    | undefined
   >();
 
   const scheduler = new Scheduler({ interval: FIVE_SECONDS * 2 });
@@ -71,9 +73,9 @@ const DashBoardProvider: FunctionComponent<IDashBoardProps> = ({
   }, []);
 
   const { findByKey, bulkFindByKeys } =
-    createModel<PromiseResultTable<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>>(
-      data
-    );
+    createModel<
+      PromiseSettleResultTable<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>
+    >(data);
 
   return (
     <DashBoardContext.Provider

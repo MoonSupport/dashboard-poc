@@ -1,3 +1,12 @@
+import {
+  IGetPath,
+  ISeriseParam,
+  IOPEN_API,
+  OPEN_API_KEY,
+  OPEN_API_RESULT,
+  OPEN_API_TYPE,
+} from "./types";
+
 const DEMO_PROJECT_API_TOCKEN = "XGJHUSQZTI2AVIENWA27HI5V";
 const DEMO_PROJECT_CODE = "5490";
 const OPEN_API_HEADERS = Object.freeze({
@@ -7,15 +16,7 @@ const OPEN_API_HEADERS = Object.freeze({
 
 const OPEN_API_ROOT = "https://service.whatap.io/open/api";
 
-export type OPEN_API_TYPE = keyof typeof OPEN_API;
-export type OPEN_API_KEY<T extends OPEN_API_TYPE> = keyof typeof OPEN_API[T];
-
-interface Param {
-  stime?: number;
-  etime?: number;
-}
-
-const OPEN_API = {
+export const OPEN_API = {
   "": {
     act_agent: "활성화 상태의 에이전트 수",
     inact_agent: "비활성화 상태의 에이전트 수",
@@ -45,8 +46,6 @@ const OPEN_API = {
   },
 };
 
-type IGetPath = (url: string, param?: Param | undefined) => string;
-
 const getPath: IGetPath = (url, param = {}) => {
   let path = url;
   for (const key in param) {
@@ -63,24 +62,15 @@ export interface SERIALIZED_OPEN_API<T extends OPEN_API_TYPE> {
   name: typeof OPEN_API[T][OPEN_API_KEY<T>];
 }
 
-type SPOT_DATA = number;
-
 export type SERIES_DATA = {
   records: any[];
   retrievedTotal: number;
   total: number;
 };
 
-export interface OPEN_API_RESULT<T extends OPEN_API_TYPE> {
-  key: OPEN_API_KEY<T>;
-  type: T;
-  name: typeof OPEN_API[T][OPEN_API_KEY<T>];
-  data: T extends "json" ? ("json" extends T ? SERIES_DATA : SPOT_DATA) : SPOT_DATA;
-}
-
 const getOpenApi =
   <T extends OPEN_API_TYPE>(type: T) =>
-  (key: OPEN_API_KEY<T>, param?: Param) =>
+  (key: OPEN_API_KEY<T>, param?: ISeriseParam) =>
     new Promise<SERIALIZED_OPEN_API<T>>((resolve, reject) => {
       if (key in OPEN_API[type]) {
         const subPath = type === "" ? [key] : [type, key];
@@ -114,15 +104,4 @@ const getOpenApi =
 const spot = getOpenApi<"">("");
 const series = getOpenApi<"json">("json");
 
-export interface OPEN_API {
-  spot: (
-    key: OPEN_API_KEY<"">
-  ) => Promise<OPEN_API_RESULT<""> | PromiseRejectedResult>;
-  series: (
-    key: OPEN_API_KEY<"json">,
-    param?: Param | undefined
-  ) => Promise<OPEN_API_RESULT<"json"> | PromiseRejectedResult>;
-  getPath: IGetPath;
-}
-
-export default { spot, series, getPath } as OPEN_API;
+export default { spot, series, getPath } as IOPEN_API;
