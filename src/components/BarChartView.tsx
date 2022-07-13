@@ -4,7 +4,7 @@ import { Bar } from "@ant-design/plots";
 
 const BarChart: FunctionComponent<IChartProps> = ({ datas }) => {
   const data = datas?.map((data) => {
-    // 여기까지 PromiseSettled를 알필요가 즈어어어언혀 없음
+    // 여기까지 PromiseSettled를 알 필요가 즈어어어언혀 없음
     if (data.status === "fulfilled") {
       return {
         key: data?.value?.key,

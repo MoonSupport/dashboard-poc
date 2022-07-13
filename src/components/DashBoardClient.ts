@@ -1,5 +1,4 @@
-import { OPEN_API } from "../api";
-import { FIVE_SECONDS, HOUR } from "../constants";
+import { HOUR } from "../constants";
 import RequestMessageQueue from "../RequestMessageQueue";
 import {
   ALL_OPEN_API_KEY,
@@ -19,6 +18,7 @@ class DashBoardClient {
   private keys: ALL_OPEN_API_KEY[];
   private seriesWidth: number;
   private updateInterval: number;
+  private nextFetchTime: number | null;
 
   private requestMessageQueue: RequestMessageQueue;
 
@@ -30,8 +30,9 @@ class DashBoardClient {
     this._config = config;
     this.api = api;
     this.seriesWidth = config.seriesWidth || HOUR;
-    this.updateInterval = config.updateInterval || FIVE_SECONDS;
+    this.updateInterval = config.updateInterval;
     this.requestMessageQueue = new RequestMessageQueue();
+    this.nextFetchTime = null;
     this.spotKeys = config.widgets.reduce(
       (arr, widget) => arr.concat(widget.chart.spot),
       [] as OPEN_API_KEY<"">[]
@@ -94,7 +95,6 @@ class DashBoardClient {
 
     const now = Date.now();
     const requestPromise = this.requestMessageQueue.map((message) => {
-      // 이전에 실패한 경우
       if (message.type === "init") {
         if (message.keyType === "json") {
           return this.api.series(message.key as OPEN_API_KEY<"json">, {
@@ -104,9 +104,23 @@ class DashBoardClient {
         } else {
           return this.api.spot(message.key as OPEN_API_KEY<"">);
         }
-        // 업데이트 로직
       } else {
         if (message.keyType === "json") {
+          if (this.nextFetchTime) {
+            const seriseRequest = this.api.series(
+              message.key as OPEN_API_KEY<"json">,
+              {
+                stime:
+                  now - this.nextFetchTime > this.seriesWidth
+                    ? now - this.seriesWidth
+                    : this.nextFetchTime,
+                etime: now,
+              }
+            );
+            this.clearNextFetchTime();
+            return seriseRequest;
+          }
+
           return this.api.series(message.key as OPEN_API_KEY<"json">, {
             stime: now - this.updateInterval * (message.failCount + 1),
             etime: now,
@@ -129,12 +143,11 @@ class DashBoardClient {
 
         const tableKey = key as ALL_OPEN_API_KEY;
         const oldChartTable = this.chartTable[tableKey];
-        // 성공한 적 없음
+
         if (oldChartTable.status === "rejected") {
           if (newValue.status === "fulfilled") {
             this.chartTable[tableKey] = newValue;
           }
-          // 한 번이라도 성공 함
         } else {
           if (newValue.status === "rejected") {
             this.requestMessageQueue.fail(tableKey);
@@ -183,6 +196,14 @@ class DashBoardClient {
         [key]: value,
       });
     }, {} as PromiseSettleResultTable<T>);
+  }
+
+  public saveNextFetchTime() {
+    if (!this.nextFetchTime) this.nextFetchTime = Date.now();
+  }
+
+  private clearNextFetchTime() {
+    this.nextFetchTime = null;
   }
 
   public get config() {

@@ -56,7 +56,41 @@ const DashBoardProvider: FunctionComponent<IDashBoardProps> = ({
     | undefined
   >();
 
-  const scheduler = new Scheduler({ interval: FIVE_SECONDS * 2 });
+  const scheduler = new Scheduler({
+    interval: dashboardClient.config.updateInterval,
+  });
+
+  useEffect(() => {
+    const onBlur = () => {
+      scheduler.stopRefetchByInterval(() => {
+        dashboardClient.saveNextFetchTime();
+      });
+    };
+    const onFocus = () => {
+      if (!scheduler.hasSchdule()) {
+        dashboardClient.refetch().then((v) => {
+          if (v) {
+            setData({ ...v });
+          }
+        });
+        scheduler.continuousRetchByInterval(() => {
+          dashboardClient.refetch().then((v) => {
+            if (v) {
+              setData({ ...v });
+            }
+          });
+        });
+      }
+    };
+
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, []);
 
   useEffect(() => {
     const chartTablePromise = dashboardClient.fetch();

@@ -1,8 +1,10 @@
+import { FIVE_SECONDS } from "../constants";
 import { DashBoardConfig, OPEN_API_RESULT } from "../types";
 
 export const mockDashboardConfig: DashBoardConfig = {
   id: 1,
   name: "첫번째 대시보드",
+  updateInterval: FIVE_SECONDS,
   widgets: [
     {
       id: 1,
