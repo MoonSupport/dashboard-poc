@@ -13,11 +13,16 @@ class Scheduler {
       this.continuousRetchByInterval(callback);
     }, this.interval);
   }
-  public stopRefetchByInterval() {
+  public stopRefetchByInterval(afterHook?: () => void) {
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
     this.timeout = null;
+    if (typeof afterHook === "function") afterHook();
+  }
+
+  public hasSchdule() {
+    return Boolean(this.timeout);
   }
 }
 

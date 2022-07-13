@@ -1,4 +1,4 @@
-import { FIVE_SECONDS, HOUR } from "../constants";
+import { FIVE_MINIUTES, FIVE_SECONDS, HOUR, SECOND } from "../constants";
 import { mockDashboardConfig } from "../fixtures";
 import { IOPEN_API, OPEN_API_RESULT, PromiseSettleResultTable } from "../types";
 import DashBoardClient from "./DashBoardClient";
@@ -645,6 +645,128 @@ describe("[DashBoardClient]", () => {
         status: "fulfilled",
         value: seriseValue2,
       },
+    });
+  });
+
+  test("serise api refetch가 일어난 후에, 마지막 fetch시간을 기록해두고 refetch시에 이 시간을 적용하여 호출할 수 있다.", async () => {
+    const now = Date.now();
+    const seriseValue = {
+      data: {
+        records: [
+          {
+            class: "OLD DATA - 1",
+            classHash: -52535353,
+            count: 5,
+            msg: "Sql Exception",
+            oids: [1135435, -2349324, -5386],
+            okindNames: ["g.demoAgent"],
+            time: now - HOUR,
+          },
+        ],
+        retrievedTotal: 1110,
+        total: 1110,
+      },
+      type: "json",
+      key: "exception/{stime}/{etime}",
+      name: "Exception 발생",
+    } as OPEN_API_RESULT<"json">;
+    const mockRejectSerise = (key: any) => Promise.resolve(seriseValue);
+    const mockApi = {
+      spot: mockSpot as any,
+      series: mockRejectSerise as any,
+      getPath: mockGetPath,
+    } as IOPEN_API;
+    const dashboardClient = new DashBoardClient(
+      mockApi,
+      Object.assign(mockDashboardConfig, {
+        widgets: [
+          {
+            id: 1,
+            name: "자원 사용 여부",
+            chart: {
+              type: "bar",
+              spot: [],
+              serise: ["exception/{stime}/{etime}"],
+            },
+          },
+        ],
+      })
+    );
+    await dashboardClient.fetch();
+
+    const seriseValue1 = {
+      data: {
+        records: [
+          {
+            class: "NEXT_LEV - 1",
+            classHash: -52535353,
+            count: 5,
+            msg: "Sql Exception",
+            oids: [1135435, -2349324, -5386],
+            okindNames: ["g.demoAgent"],
+            time: now - HOUR + FIVE_SECONDS,
+          },
+        ],
+        retrievedTotal: 1110,
+        total: 1110,
+      },
+      type: "json",
+      key: "exception/{stime}/{etime}",
+      name: "Exception 발생",
+    } as OPEN_API_RESULT<"json">;
+    const mockSerise = jest.fn();
+    mockApi.series = mockSerise;
+    mockSerise.mockImplementation((key: any) => Promise.resolve(seriseValue1));
+    Date.now = jest.fn(() => now + FIVE_SECONDS);
+
+    const result = await dashboardClient.refetch();
+
+    expect(mockSerise).toBeCalledWith("exception/{stime}/{etime}", {
+      stime: now,
+      etime: now + FIVE_SECONDS,
+    });
+    expect(result).toStrictEqual({
+      "exception/{stime}/{etime}": {
+        status: "fulfilled",
+        value: seriseValue1,
+      },
+    });
+
+    // 업데이트 하고 1초 후
+    Date.now = jest.fn(() => now + FIVE_SECONDS + SECOND);
+
+    dashboardClient.saveNextFetchTime();
+    // 업데이트 하고 5분 후
+    Date.now = jest.fn(() => now + FIVE_SECONDS + FIVE_MINIUTES);
+
+    const seriseValue2 = {
+      data: {
+        records: [
+          {
+            class: "NEXT_LEV - 1",
+            classHash: -52535353,
+            count: 5,
+            msg: "Sql Exception",
+            oids: [1135435, -2349324, -5386],
+            okindNames: ["g.demoAgent"],
+            time: now - HOUR + FIVE_SECONDS + FIVE_MINIUTES,
+          },
+        ],
+        retrievedTotal: 1110,
+        total: 1110,
+      },
+      type: "json",
+      key: "exception/{stime}/{etime}",
+      name: "Exception 발생",
+    } as OPEN_API_RESULT<"json">;
+    const mockSerise2 = jest.fn();
+    mockApi.series = mockSerise2;
+    mockSerise2.mockImplementation((key: any) => Promise.resolve(seriseValue2));
+    await dashboardClient.refetch();
+
+    expect(mockSerise2).toBeCalledWith("exception/{stime}/{etime}", {
+      stime: now + FIVE_SECONDS + SECOND,
+      etime: now + FIVE_SECONDS + FIVE_MINIUTES,
     });
   });
 });

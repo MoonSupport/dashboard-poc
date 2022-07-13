@@ -6,7 +6,7 @@ export interface DashBoardConfig {
   id: number;
   name: string;
   widgets: WidgetCofig[];
-  updateInterval?: number;
+  updateInterval: number;
   seriesWidth?: number;
 }
 
