@@ -2,13 +2,46 @@
 
 import { createContext, FunctionComponent, ReactNode, useContext } from "react";
 import { format } from "date-fns";
-import { OPEN_API_RESULT, SERIES_DATA } from "../api";
+import { SERIES_DATA } from "../api";
 import { useDashBoard } from "./DashBoardProvider";
+import { PromiseSettledOpenApiResult } from "../types";
 
 const Context = createContext(null);
 
+type ExceptionType =
+  | "Internal RuntimeException"
+  | "Sql Exception"
+  | "Unknown Error!!";
+
+type IOname = string;
+
+type XYData = [number, Date];
+type SeriseMap = Map<IOname, XYData[]>;
+
+export interface ExceptionRecord {
+  time: number;
+  msg: ExceptionType;
+  onames: [IOname];
+  count: number;
+}
+
+interface MultiLineRecord {
+  key: IOname;
+  count: number;
+  time: string;
+}
+
+interface LineChartDataTable {
+  //[key: ExceptionType]
+  [key: string]: MultiLineRecord[];
+}
+
+interface GroupedSeriseRecord {
+  [key: IOname]: XYData[];
+}
+
 export const buildLineChartData = (
-  res: PromiseSettledResult<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>,
+  res: PromiseSettledOpenApiResult,
   config: {
     interval: number;
   }
@@ -19,9 +52,11 @@ export const buildLineChartData = (
 
   const rawData = res.value.data as SERIES_DATA;
 
-  const subject = new Map();
+  const subject = new Map<ExceptionType, SeriseMap>();
 
-  const rawRecords = rawData?.records ? [...rawData.records] : [];
+  const rawRecords = (
+    rawData?.records ? [...rawData.records] : []
+  ) as ExceptionRecord[];
 
   // O(nlogn)
   const sortedRes = rawRecords.sort(function (a, b) {
@@ -33,9 +68,10 @@ export const buildLineChartData = (
     const record = sortedRes[i];
     if (subject.has(record.msg)) {
       // 해당되는 에러가 있다면
-      const serise = subject.get(record.msg);
+      const serise = subject.get(record.msg) as SeriseMap;
+
       if (serise.has(record.onames[0])) {
-        const target = serise.get(record.onames[0]);
+        const target = serise.get(record.onames[0]) as XYData[];
         // 날짜로 정렬되었기 때문에 가장 최신 값만 비교해보면 된다.
         if (target[target.length - 1][1].getTime() === record.time) {
           target[target.length - 1][0] += record.count;
@@ -43,22 +79,22 @@ export const buildLineChartData = (
           target.push([record.count, new Date(record.time)]);
         }
       } else {
-        subject
-          .get(record.msg)
-          .set(record.onames[0], [[record.count, new Date(record.time)]]);
+        serise.set(record.onames[0], [[record.count, new Date(record.time)]]);
       }
     } else {
       // 해당하는 에러가 없다면
       subject.set(record.msg, new Map());
-      subject
-        .get(record.msg)
-        .set(record.onames[0], [[record.count, new Date(record.time)]]);
+      const serise = subject.get(record.msg) as SeriseMap;
+
+      serise.set(record.onames[0], [[record.count, new Date(record.time)]]);
     }
   }
 
-  const data = {} as any;
+  let graud = 0;
+  const LIMIT = 3000;
+  const data = {} as LineChartDataTable;
   for (const [subjectName, Exception] of subject) {
-    const groupedSerise = {} as any;
+    const groupedSerise = {} as GroupedSeriseRecord;
     // 날짜 별로 새로운 레코드를 만든다. O(n^2)
     for (const [key, record] of Exception) {
       let cursor = 0;
@@ -68,6 +104,9 @@ export const buildLineChartData = (
         i <= sortedRes[sortedRes.length - 1].time;
         i += config.interval
       ) {
+        if (graud++ > LIMIT) {
+          throw new Error("반복 횟수가 너무 많습니다.");
+        }
         if (record[cursor] && record[cursor][1].getTime() == i) {
           groupedSerise[key].push(record[cursor]);
           cursor++;
@@ -77,7 +116,7 @@ export const buildLineChartData = (
       }
     }
 
-    const multilineRecords = [];
+    const multilineRecords = [] as MultiLineRecord[];
     // 새로운 레코드를 데이터 단위로 묶는다. O(n^2)
     for (const [key, records] of Object.entries(groupedSerise)) {
       for (const record of records as any) {
