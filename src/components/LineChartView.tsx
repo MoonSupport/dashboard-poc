@@ -26,11 +26,7 @@ const LineChart: FunctionComponent<IChartProps> = ({ seriseKey }) => {
     },
   } as LineConfig;
 
-  return (
-    <div data-testid="line">
-      <Line {...config} />
-    </div>
-  );
+  return <Line {...config} />;
 };
 
 export default LineChart;

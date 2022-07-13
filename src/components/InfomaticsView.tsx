@@ -5,9 +5,9 @@ import { IChartProps } from "./ChartImplementation";
 const InfomaticsView: FunctionComponent<IChartProps> = ({ datas }) => {
   return (
     <div data-testid="infomatics">
-      {datas.map((data) =>
+      {datas.map((data, index) =>
         data.status === "fulfilled" ? (
-          <Row justify="start">
+          <Row key={index} justify="start">
             <Col>
               <Typography.Paragraph className="" strong>
                 {data.value?.key}
@@ -20,7 +20,7 @@ const InfomaticsView: FunctionComponent<IChartProps> = ({ datas }) => {
             </Col>
           </Row>
         ) : (
-          <Row>
+          <Row key={index}>
             <Col>
               <Typography.Paragraph strong>{data.reason?.key}</Typography.Paragraph>
             </Col>

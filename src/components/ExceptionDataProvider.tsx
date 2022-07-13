@@ -2,19 +2,18 @@
 
 import { createContext, FunctionComponent, ReactNode, useContext } from "react";
 import { format } from "date-fns";
-import { SERIES_DATA } from "../api";
+import { OPEN_API_RESULT, SERIES_DATA } from "../api";
 import { useDashBoard } from "./DashBoardProvider";
-import { ChartTableData } from "../types";
 
 const Context = createContext(null);
 
 export const buildLineChartData = (
-  res: ChartTableData,
+  res: PromiseSettledResult<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>,
   config: {
     interval: number;
   }
 ) => {
-  if (!res?.value) {
+  if (res?.status === "rejected" || !res?.value) {
     return {};
   }
 

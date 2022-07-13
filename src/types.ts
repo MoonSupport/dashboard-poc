@@ -25,12 +25,10 @@ export interface ChartConfig {
 
 export type ALL_OPEN_API_KEY = OPEN_API_KEY<""> | OPEN_API_KEY<"json">;
 
-export type ChartTableData = {
-  status: "fulfilled" | "rejected";
-  value?: OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">;
-  reason?: { key: ALL_OPEN_API_KEY; reason: string };
+export type PromiseResultTable<T> = {
+  [key in ALL_OPEN_API_KEY]: PromiseSettledResult<T>;
 };
 
-export type ChartTable = {
-  [key in ALL_OPEN_API_KEY]: ChartTableData;
-};
+export interface IPromiseResultTableData {
+  key: any;
+}

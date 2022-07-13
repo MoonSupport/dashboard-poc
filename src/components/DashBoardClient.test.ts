@@ -1,7 +1,7 @@
 import { OPEN_API, OPEN_API_RESULT } from "../api";
 import { FIVE_SECONDS, HOUR } from "../constants";
-import { mockDashboardConfig, mockDashboardConfigSpotKeys } from "../fixtures";
-import { ChartTable } from "../types";
+import { mockDashboardConfig } from "../fixtures";
+import { PromiseResultTable } from "../types";
 import DashBoardClient from "./DashBoardClient";
 
 describe("[DashBoardClient]", () => {
@@ -296,7 +296,10 @@ describe("[DashBoardClient]", () => {
 
     Date.now = jest.fn(() => now + FIVE_SECONDS); // 현재 시간에서 5초 지남
 
-    const updatedChartTable = (await dashboardClient.refetch()) as ChartTable;
+    const updatedChartTable =
+      (await dashboardClient.refetch()) as PromiseResultTable<
+        OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">
+      >;
 
     expect(updatedChartTable["act_agent"]).toEqual({
       status: "fulfilled",

@@ -12,6 +12,13 @@ jest.mock("./ExceptionDataProvider", () => ({
   useExceptionData: () => ({ data: {} }),
 }));
 
+const MockChildComponent = jest.fn();
+
+jest.mock("./LineChartView", () => (props: any) => {
+  MockChildComponent(props);
+  return <div data-testid="line">line</div>;
+});
+
 describe("[ChartContainer]", () => {
   test("차트가 요구하는 데이터를 context에 요청한다.", () => {
     render(

@@ -103,21 +103,25 @@ const getOpenApi =
           name,
           data,
         }))
-        .catch((reason) => ({
-          key,
-          reason,
-        }))
+        .catch((reason) =>
+          Promise.reject({
+            key,
+            reason,
+          })
+        )
     );
 
 const spot = getOpenApi<"">("");
 const series = getOpenApi<"json">("json");
 
 export interface OPEN_API {
-  spot: (key: OPEN_API_KEY<"">) => Promise<OPEN_API_RESULT<"">>;
+  spot: (
+    key: OPEN_API_KEY<"">
+  ) => Promise<OPEN_API_RESULT<""> | PromiseRejectedResult>;
   series: (
     key: OPEN_API_KEY<"json">,
     param?: Param | undefined
-  ) => Promise<OPEN_API_RESULT<"json">>;
+  ) => Promise<OPEN_API_RESULT<"json"> | PromiseRejectedResult>;
   getPath: IGetPath;
 }
 

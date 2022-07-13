@@ -12,9 +12,9 @@ const ChartContainer: FunctionComponent<IChartContainerProps> = ({ config }) => 
   const { bulkFindByKeys } = useDashBoard();
   const Chart = ChartImplementation[config.type];
 
-  const data = bulkFindByKeys([...config.spot, ...config.serise]);
-  if (!data) return <Loading />;
-  return <Chart seriseKey={config.seriseKey} datas={data} />;
+  const datas = bulkFindByKeys([...config.spot, ...config.serise]);
+  if (!datas) return <Loading />;
+  return <Chart seriseKey={config.seriseKey} datas={datas} />;
 };
 
 export default ChartContainer;

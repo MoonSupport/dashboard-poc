@@ -9,12 +9,7 @@ import {
 import { OPEN_API_RESULT } from "../api";
 import { FIVE_SECONDS } from "../constants";
 import Scheduler from "../Scheduler";
-import {
-  ALL_OPEN_API_KEY,
-  ChartTable,
-  ChartTableData,
-  DashBoardConfig,
-} from "../types";
+import { ALL_OPEN_API_KEY, DashBoardConfig, PromiseResultTable } from "../types";
 import DashBoardClient from "./DashBoardClient";
 
 interface IDashBoardProps {
@@ -24,8 +19,12 @@ interface IDashBoardProps {
 
 interface DashBoardValue {
   config: DashBoardConfig;
-  findByKey: (key: ALL_OPEN_API_KEY) => ChartTableData;
-  bulkFindByKeys: (keys: ALL_OPEN_API_KEY[]) => ChartTableData[];
+  findByKey: (
+    key: ALL_OPEN_API_KEY
+  ) => PromiseSettledResult<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>;
+  bulkFindByKeys: (
+    keys: ALL_OPEN_API_KEY[]
+  ) => PromiseSettledResult<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>[];
 }
 
 const DashBoardContext = createContext<DashBoardValue | null>(null);
@@ -35,35 +34,25 @@ export const useDashBoard = (): DashBoardValue => {
   return value;
 };
 
-export const createModel = <Data,>(data: Data | undefined) => {
-  const findByKey = (key: keyof Data) => {
-    return data ? data[key] : ({} as ChartTableData);
+export const createModel = <T,>(table: T | undefined) => {
+  const findByKey = (key: keyof T) => {
+    return table ? table[key] : ({} as T[keyof T]);
   };
 
-  const bulkFindByKeys = (keys: (keyof Data)[]) => {
+  const bulkFindByKeys = (keys: (keyof T)[]) => {
     return keys.map((key) => findByKey(key));
   };
 
   return { findByKey, bulkFindByKeys };
 };
 
-export const serializeChartTable = (
-  keys: ALL_OPEN_API_KEY[],
-  datas: PromiseSettledResult<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>[]
-) => {
-  return keys.reduce((obj, key, index) => {
-    const value = datas[index];
-    return Object.assign(obj, {
-      [key]: value,
-    });
-  }, {} as ChartTable);
-};
-
 const DashBoardProvider: FunctionComponent<IDashBoardProps> = ({
   children,
   dashboardClient,
 }) => {
-  const [data, setData] = useState<ChartTable | undefined>();
+  const [data, setData] = useState<
+    PromiseResultTable<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">> | undefined
+  >();
 
   const scheduler = new Scheduler({ interval: FIVE_SECONDS * 2 });
 
@@ -81,7 +70,10 @@ const DashBoardProvider: FunctionComponent<IDashBoardProps> = ({
     });
   }, []);
 
-  const { findByKey, bulkFindByKeys } = createModel<ChartTable>(data);
+  const { findByKey, bulkFindByKeys } =
+    createModel<PromiseResultTable<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>>(
+      data
+    );
 
   return (
     <DashBoardContext.Provider

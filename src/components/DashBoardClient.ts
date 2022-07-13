@@ -1,7 +1,12 @@
 import { OPEN_API, OPEN_API_KEY, OPEN_API_RESULT } from "../api";
 import { FIVE_SECONDS, HOUR } from "../constants";
 import RequestMessageQueue from "../RequestMessageQueue";
-import { ALL_OPEN_API_KEY, ChartTable, DashBoardConfig } from "../types";
+import {
+  ALL_OPEN_API_KEY,
+  DashBoardConfig,
+  IPromiseResultTableData,
+  PromiseResultTable,
+} from "../types";
 
 class DashBoardClient {
   private _config;
@@ -14,7 +19,9 @@ class DashBoardClient {
 
   private requestMessageQueue: RequestMessageQueue;
 
-  public chartTable: ChartTable | null;
+  public chartTable: PromiseResultTable<
+    OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">
+  > | null;
 
   constructor(api: OPEN_API, config: DashBoardConfig) {
     this._config = config;
@@ -57,17 +64,20 @@ class DashBoardClient {
 
     const response = Promise.allSettled(requestPromise);
     return response.then((value) => {
-      const chartTable = this.serializeChartTable(value);
-      Object.entries(chartTable).map(([key, value]) => {
-        if (typeof value.value !== "undefined") {
+      const promiseResultTable = this.nomalizePromiseResultTable<
+        OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">
+      >(value);
+
+      Object.entries(promiseResultTable).map(([key, value]) => {
+        if (value.status === "fulfilled") {
           this.requestMessageQueue.consume(key as ALL_OPEN_API_KEY);
         } else {
           this.requestMessageQueue.fail(key as ALL_OPEN_API_KEY);
         }
       });
 
-      this.chartTable = chartTable;
-      return chartTable;
+      this.chartTable = promiseResultTable;
+      return promiseResultTable;
     });
   }
 
@@ -107,27 +117,30 @@ class DashBoardClient {
     const response = Promise.allSettled(requestPromise);
 
     return response.then((res) => {
-      const updatedChartTable = this.serializeChartTable(res);
-      Object.entries(updatedChartTable).map(([key, newValue]) => {
+      const updateedPromiseResultTable = this.nomalizePromiseResultTable<
+        OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">
+      >(res);
+
+      Object.entries(updateedPromiseResultTable).map(([key, newValue]) => {
         if (!this.chartTable) throw new Error("업데이트 할 테이블이 없습니다.");
 
         const tableKey = key as ALL_OPEN_API_KEY;
         const oldChartTable = this.chartTable[tableKey];
         // 성공한 적 없음
-        if (typeof oldChartTable?.reason !== "undefined") {
+        if (oldChartTable.status === "rejected") {
           if (newValue.status === "fulfilled") {
             this.chartTable[tableKey] = newValue;
           }
           // 한 번이라도 성공 함
         } else {
-          if (typeof newValue?.reason !== "undefined") {
+          if (newValue.status === "rejected") {
             this.requestMessageQueue.fail(tableKey);
             return;
           }
 
           if (
-            oldChartTable.value?.type === "json" &&
-            newValue.value?.type === "json"
+            oldChartTable.value.type === "json" &&
+            newValue.value.type === "json"
           ) {
             const shouldLeftOldRecord = oldChartTable.value.data.records.filter(
               (record) => {
@@ -144,11 +157,6 @@ class DashBoardClient {
             this.chartTable[tableKey].value.data.records = updatedRecords;
           } else {
             const tableKey = key as OPEN_API_KEY<"">;
-            if (typeof newValue?.reason !== "undefined") {
-              this.requestMessageQueue.fail(tableKey);
-              return;
-            }
-
             this.chartTable[tableKey] = newValue;
             this.requestMessageQueue.consume(tableKey);
           }
@@ -159,21 +167,19 @@ class DashBoardClient {
     });
   }
 
-  private serializeChartTable(
-    datas: PromiseSettledResult<OPEN_API_RESULT<""> | OPEN_API_RESULT<"json">>[]
-  ) {
+  private nomalizePromiseResultTable<T extends IPromiseResultTableData>(
+    datas: PromiseSettledResult<T>[]
+  ): PromiseResultTable<T> {
     return this.keys.reduce((obj, key) => {
-      const value =
-        datas[
-          datas.findIndex((data) => {
-            if (data.status === "fulfilled") return data.value.key == key;
-            else return data.reason.key == key;
-          })
-        ];
+      const value = datas.find((data) => {
+        if (data.status === "fulfilled") return data.value.key == key;
+        else if (data.status === "rejected") return data.reason.key == key;
+        else throw new Error("Invalid Status");
+      });
       return Object.assign(obj, {
         [key]: value,
       });
-    }, {} as ChartTable);
+    }, {} as PromiseResultTable<T>);
   }
 
   public get config() {
