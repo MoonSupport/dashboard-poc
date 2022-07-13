@@ -1,5 +1,4 @@
-import { OPEN_API_RESULT } from "../api";
-import { DashBoardConfig } from "../types";
+import { DashBoardConfig, OPEN_API_RESULT } from "../types";
 
 export const mockDashboardConfig: DashBoardConfig = {
   id: 1,

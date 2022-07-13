@@ -1,5 +1,4 @@
-import { OPEN_API_TYPE } from "./api";
-import { ALL_OPEN_API_KEY } from "./types";
+import { ALL_OPEN_API_KEY, OPEN_API_TYPE } from "./types";
 
 type RequestMessageType = "init" | "update";
 
